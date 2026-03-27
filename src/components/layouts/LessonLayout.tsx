@@ -8,7 +8,7 @@ interface LessonLayoutProps {
 
 const LessonLayout: React.FC<LessonLayoutProps> = ({ children }) => {
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-[#0d1117] overflow-hidden">
       <Navbar />
       <main className="flex-grow flex flex-col min-h-0">{children}</main>
     </div>

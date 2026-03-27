@@ -54,20 +54,20 @@ export class ErrorBoundary extends React.Component<
       return (
         <div className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center">
           <div className="glass-card rounded-2xl p-8 max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Something went wrong
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               An unexpected error occurred. Please try again.
             </p>
             {this.state.error && (
-              <pre className="text-xs text-red-600 bg-red-50 p-3 rounded-lg mb-4 overflow-auto max-h-32 text-left">
+              <pre className="text-xs text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 p-3 rounded-lg mb-4 overflow-auto max-h-32 text-left">
                 {this.state.error.message}
               </pre>
             )}
             <button
               onClick={this.handleReset}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               Try Again
             </button>

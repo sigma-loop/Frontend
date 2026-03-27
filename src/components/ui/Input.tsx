@@ -18,7 +18,7 @@ const Input: React.FC<InputProps> = ({
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
           {label}
         </label>
@@ -30,12 +30,17 @@ const Input: React.FC<InputProps> = ({
           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
           transition-all duration-200 shadow-sm
           disabled:bg-gray-50 disabled:text-gray-500
-          ${error ? "border-red-300 focus:ring-red-500" : ""}
+          dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-100
+          dark:focus:ring-indigo-400 dark:disabled:bg-gray-900 dark:disabled:text-gray-500
+          dark:placeholder-gray-500
+          ${error ? "border-red-300 focus:ring-red-500 dark:border-red-500 dark:focus:ring-red-400" : ""}
           ${className}
         `}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
+      )}
     </div>
   );
 };

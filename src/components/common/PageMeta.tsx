@@ -7,14 +7,14 @@ interface PageMetaProps {
   favicon?: string;
 }
 
-const PageMeta: React.FC<PageMetaProps> = ({ 
-  title, 
-  description = "Learn programming with interactive challenges.",
-  favicon = "/vite.svg" 
+const PageMeta: React.FC<PageMetaProps> = ({
+  title,
+  description = "Master the Logic behind the Code.",
+  favicon = "/favicon.svg",
 }) => {
   return (
     <Helmet>
-      <title>{title} | Lambda LAP</title>
+      <title>{title} | SigmaLoop</title>
       <meta name="description" content={description} />
       <link rel="icon" type="image/svg+xml" href={favicon} />
     </Helmet>

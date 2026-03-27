@@ -11,8 +11,8 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <PageMeta title={title ? `${title} - Lambda LAP` : "Lambda LAP - Learn & Code"} />
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#0d1117]">
+      <PageMeta title={title || "Master the Logic"} />
       <Navbar />
       <main className="flex-grow pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {children}
