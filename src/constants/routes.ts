@@ -1,5 +1,5 @@
 /**
- * Route path constants for the Lambda LAP Frontend.
+ * Route path constants for the SigmaLoop Frontend.
  * Use these instead of hardcoding strings in components and navigation.
  */
 

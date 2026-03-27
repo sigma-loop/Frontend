@@ -1,5 +1,5 @@
 /**
- * App-wide constants for the Lambda LAP Frontend.
+ * App-wide constants for the SigmaLoop Frontend.
  */
 
 // API

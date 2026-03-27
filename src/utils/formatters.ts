@@ -1,5 +1,5 @@
 /**
- * Formatting utilities for the Lambda LAP Frontend.
+ * Formatting utilities for the SigmaLoop Frontend.
  */
 
 /**

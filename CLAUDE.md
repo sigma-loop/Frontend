@@ -1,4 +1,6 @@
-# Frontend — Lambda LAP Client
+# Frontend — SigmaLoop Client
+
+> See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for the full color theme reference (light + dark), brand colors, component tokens, and logo description.
 
 ## Stack
 
