@@ -57,7 +57,7 @@ const AdminChallenges: React.FC = () => {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </AdminLayout>
     );
@@ -68,13 +68,13 @@ const AdminChallenges: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <Link 
-              to={backLink} 
-              className="text-indigo-600 hover:underline mb-2 inline-block"
+            <Link
+              to={backLink}
+              className="text-indigo-600 dark:text-indigo-400 hover:underline mb-2 inline-block"
             >
               {courseId ? "← Back to Lessons" : "← Back to Courses"}
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               Challenges for "{lesson?.title || 'Lesson'}"
             </h1>
           </div>
@@ -86,18 +86,18 @@ const AdminChallenges: React.FC = () => {
         <div className="grid gap-4">
           {challenges.length === 0 ? (
             <Card>
-              <p className="text-gray-500 text-center py-8">No challenges yet. Create one to get started.</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No challenges yet. Create one to get started.</p>
             </Card>
           ) : (
             challenges.map((challenge) => (
               <Card key={challenge.id}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{challenge.title}</h3>
-                    <div className="text-sm text-gray-500">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{challenge.title}</h3>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       Languages: {Object.keys(challenge.starterCodes).join(", ")}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       Test Cases: {challenge.testCases?.length || 0}
                     </div>
                   </div>
@@ -112,7 +112,7 @@ const AdminChallenges: React.FC = () => {
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDelete(challenge.id)}
-                      className="text-red-600 hover:bg-red-50"
+                      className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       Delete
                     </Button>

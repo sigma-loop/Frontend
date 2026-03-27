@@ -48,10 +48,10 @@ const Curriculum: React.FC = () => {
     <MainLayout title="Curriculum Roadmap">
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-10">
-          <h1 className="text-4xl font-display font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-display font-bold text-gray-900 dark:text-gray-100 mb-4">
             Curriculum Roadmap
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Your step-by-step guide to becoming a Senior Developer.
           </p>
         </div>
@@ -64,13 +64,13 @@ const Curriculum: React.FC = () => {
             >
               {/* Icon / Dot logic */}
               <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow 
+                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow
                 ${
                   step.status === "COMPLETED"
                     ? "bg-green-500 border-green-500"
                     : step.status === "IN_PROGRESS"
                       ? "bg-indigo-600 border-indigo-600"
-                      : "bg-white border-slate-300"
+                      : "bg-white dark:bg-[#161b22] border-slate-300 dark:border-gray-700"
                 }`}
               >
                 {step.status === "COMPLETED" ? (
@@ -101,7 +101,7 @@ const Curriculum: React.FC = () => {
                 className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 ${step.status === "LOCKED" ? "opacity-75 grayscale" : ""}`}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg">
+                  <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">
                     {step.title}
                   </h3>
                   <Badge
@@ -116,13 +116,13 @@ const Curriculum: React.FC = () => {
                     {step.status.replace("_", " ")}
                   </Badge>
                 </div>
-                <p className="text-gray-600 mb-4 text-sm">{step.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">{step.description}</p>
 
                 <div className="space-y-2">
                   {step.courses.map((course) => (
                     <div
                       key={course}
-                      className="flex items-center text-sm text-gray-700"
+                      className="flex items-center text-sm text-gray-700 dark:text-gray-300"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mr-2"></span>
                       {course}
@@ -130,11 +130,11 @@ const Curriculum: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full text-indigo-600"
+                    className="w-full text-indigo-600 dark:text-indigo-400"
                     disabled={step.status === "LOCKED"}
                   >
                     {step.status === "LOCKED" ? "Locked" : "View Details"}

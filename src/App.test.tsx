@@ -12,7 +12,7 @@ describe("App", () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText("Lambda LAP Frontend")).toBeInTheDocument();
+    expect(screen.getByText("SigmaLoop Frontend")).toBeInTheDocument();
     expect(screen.getByText("Welcome to the application")).toBeInTheDocument();
   });
 });

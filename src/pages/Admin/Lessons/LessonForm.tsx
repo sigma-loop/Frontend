@@ -72,7 +72,7 @@ const LessonForm: React.FC = () => {
     return (
       <AdminLayout title="Loading...">
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </AdminLayout>
     );
@@ -81,7 +81,7 @@ const LessonForm: React.FC = () => {
   return (
     <AdminLayout title={isEdit ? "Edit Lesson" : "Create Lesson"}>
       <div className="max-w-4xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           {isEdit ? "Edit Lesson" : "Create Lesson"}
         </h1>
 
@@ -89,7 +89,7 @@ const LessonForm: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Title
                 </label>
                 <Input
@@ -100,7 +100,7 @@ const LessonForm: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Order Index
                 </label>
                 <Input
@@ -117,11 +117,11 @@ const LessonForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Type
               </label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-800/50 dark:text-gray-100"
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
               >
@@ -133,11 +133,11 @@ const LessonForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Content (Markdown)
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
                 rows={20}
                 value={formData.contentMarkdown}
                 onChange={(e) => setFormData({ ...formData, contentMarkdown: e.target.value })}

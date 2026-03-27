@@ -61,7 +61,7 @@ const CourseDetails: React.FC = () => {
       try {
           await userService.enrollInCourse(courseId);
           setIsEnrolled(true);
-          
+
           // Refresh syllabus to unlock content
           try {
             const syllabusRes = await api.get<JSendResponse<SyllabusResponse>>(
@@ -85,7 +85,7 @@ const CourseDetails: React.FC = () => {
     return (
       <MainLayout title="Loading...">
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </MainLayout>
     );
@@ -95,7 +95,7 @@ const CourseDetails: React.FC = () => {
     return (
       <MainLayout title="Course Not Found">
         <div className="text-center py-12">
-          <h2 className="text-xl font-bold text-gray-900">Course not found</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Course not found</h2>
           <Link to="/courses">
             <Button variant="ghost" className="mt-4">
               Back to courses
@@ -110,7 +110,7 @@ const CourseDetails: React.FC = () => {
     switch (status) {
       case "COMPLETED":
         return (
-          <div className="bg-green-100 p-2 rounded-full text-green-600">
+          <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -128,7 +128,7 @@ const CourseDetails: React.FC = () => {
         );
       case "IN_PROGRESS":
         return (
-          <div className="bg-indigo-100 p-2 rounded-full text-indigo-600">
+          <div className="bg-indigo-100 dark:bg-indigo-500/20 p-2 rounded-full text-indigo-600 dark:text-indigo-400">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -152,7 +152,7 @@ const CourseDetails: React.FC = () => {
         );
       default:
         return (
-          <div className="bg-gray-100 p-2 rounded-full text-gray-400">
+          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full text-gray-400">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -175,7 +175,7 @@ const CourseDetails: React.FC = () => {
     <MainLayout title={course.title}>
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-[#161b22] rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
               <div className="flex items-center space-x-3 mb-2">
@@ -186,34 +186,34 @@ const CourseDetails: React.FC = () => {
                 >
                   {course.difficulty}
                 </Badge>
-                <span className="text-gray-500 text-sm">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
                   {course.meta.lessonCount} Lessons
                 </span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 {course.title}
               </h1>
-              <p className="text-gray-600 max-w-2xl">{course.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl">{course.description}</p>
             </div>
             <div className="mt-4 md:mt-0 text-right">
               {isEnrolled ? (
                 <>
-                    <div className="text-sm text-gray-500 mb-1">Your Progress</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Your Progress</div>
                     <div className="flex items-center space-x-3">
-                        <div className="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="w-32 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                             className="h-full bg-indigo-600 rounded-full transition-all duration-500"
                             style={{ width: `${syllabus.userProgress.percent}%` }}
                         />
                         </div>
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-gray-900 dark:text-gray-100">
                         {syllabus.userProgress.percent}%
                         </span>
                     </div>
                 </>
               ) : (
-                  <Button 
-                    onClick={handleEnroll} 
+                  <Button
+                    onClick={handleEnroll}
                     disabled={isEnrolling}
                     className="w-full md:w-auto"
                   >
@@ -226,23 +226,23 @@ const CourseDetails: React.FC = () => {
 
         {/* Syllabus */}
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Course Syllabus
           </h2>
           <div className="space-y-4">
             {syllabus.lessons.map((lesson) => (
               <Card
                 key={lesson.id}
-                className={`transition-all ${lesson.status !== "LOCKED" ? "hover:border-indigo-300 cursor-pointer" : "opacity-75 bg-gray-50"}`}
+                className={`transition-all ${lesson.status !== "LOCKED" ? "hover:border-indigo-300 cursor-pointer" : "opacity-75 bg-gray-50 dark:bg-[#0d1117]"}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     {getStatusIcon(lesson.status)}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         {lesson.orderIndex}. {lesson.title}
                       </h3>
-                      <p className="text-sm text-gray-500 capitalize">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
                         {lesson.type.toLowerCase()}
                       </p>
                     </div>

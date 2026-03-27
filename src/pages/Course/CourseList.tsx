@@ -68,16 +68,16 @@ const CourseList: React.FC = () => {
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               Explore Courses
             </h1>
-            <p className="mt-1 text-gray-500">
+            <p className="mt-1 text-gray-500 dark:text-gray-400">
               Master new skills with our expert-led courses.
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex gap-4 w-full md:w-auto">
             <select
-              className="px-4 py-2 rounded-xl border border-gray-200 bg-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-[#161b22] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={filters.difficulty}
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, difficulty: e.target.value }))
@@ -104,7 +104,7 @@ const CourseList: React.FC = () => {
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
           </div>
         ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -118,36 +118,36 @@ const CourseList: React.FC = () => {
                     <Badge variant={getDifficultyColor(course.difficulty)}>
                       {course.difficulty}
                     </Badge>
-                    <span className="text-xs text-gray-500 font-medium">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                       {course.meta.lessonCount} Lessons
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                     {course.title}
                   </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
                     {course.description}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {course.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md"
+                        className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-md"
                       >
                         #{tag}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-sm text-gray-500">
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {course.meta.durationHours}h duration
                   </span>
                   <Link to={`/courses/${course.id}`}>
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200"
+                      className="hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200"
                     >
                       View Course
                     </Button>
@@ -158,12 +158,12 @@ const CourseList: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               No courses found matching your criteria.
             </p>
             <Button
               variant="ghost"
-              className="mt-2 text-indigo-600"
+              className="mt-2 text-indigo-600 dark:text-indigo-400"
               onClick={() => setFilters({ difficulty: "", search: "" })}
             >
               Clear Filters

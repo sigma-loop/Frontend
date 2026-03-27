@@ -44,7 +44,7 @@ const AdminCourses: React.FC = () => {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </AdminLayout>
     );
@@ -54,7 +54,7 @@ const AdminCourses: React.FC = () => {
     <AdminLayout title="Courses">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Courses</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Courses</h1>
           <Link to="/admin/courses/new">
             <Button>Create Course</Button>
           </Link>
@@ -66,7 +66,7 @@ const AdminCourses: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900">{course.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{course.title}</h3>
                     <Badge
                       variant={
                         course.difficulty === "BEGINNER" ? "success" : "warning"
@@ -78,8 +78,8 @@ const AdminCourses: React.FC = () => {
                       <Badge variant="success">Published</Badge>
                     )}
                   </div>
-                  <p className="text-gray-600 mb-3">{course.description}</p>
-                  <div className="flex gap-2 text-sm text-gray-500">
+                  <p className="text-gray-600 dark:text-gray-400 mb-3">{course.description}</p>
+                  <div className="flex gap-2 text-sm text-gray-500 dark:text-gray-400">
                     <span>{course.meta.lessonCount} lessons</span>
                     <span>•</span>
                     <span>{course.meta.durationHours}h</span>
@@ -103,7 +103,7 @@ const AdminCourses: React.FC = () => {
                     size="sm"
                     variant="ghost"
                     onClick={() => handleDelete(course.id)}
-                    className="text-red-600 hover:bg-red-50"
+                    className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     Delete
                   </Button>

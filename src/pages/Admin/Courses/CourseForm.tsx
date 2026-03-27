@@ -82,7 +82,7 @@ const CourseForm: React.FC = () => {
     return (
       <AdminLayout title="Loading...">
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </AdminLayout>
     );
@@ -91,14 +91,14 @@ const CourseForm: React.FC = () => {
   return (
     <AdminLayout title={isEdit ? "Edit Course" : "Create Course"}>
       <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           {isEdit ? "Edit Course" : "Create Course"}
         </h1>
 
         <Card>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Title
               </label>
               <Input
@@ -109,11 +109,11 @@ const CourseForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Description
               </label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-800/50 dark:text-gray-100"
                 rows={4}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -122,11 +122,11 @@ const CourseForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Difficulty
               </label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-800/50 dark:text-gray-100"
                 value={formData.difficulty}
                 onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
               >
@@ -137,7 +137,7 @@ const CourseForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tags (comma separated)
               </label>
               <Input
@@ -156,7 +156,7 @@ const CourseForm: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
                   className="mr-2"
                 />
-                <label htmlFor="isPublished" className="text-sm font-medium text-gray-700">
+                <label htmlFor="isPublished" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Published
                 </label>
               </div>

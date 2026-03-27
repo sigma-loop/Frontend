@@ -46,7 +46,7 @@ const AdminLessons: React.FC = () => {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </AdminLayout>
     );
@@ -57,10 +57,10 @@ const AdminLessons: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <Link to="/admin/courses" className="text-indigo-600 hover:underline mb-2 inline-block">
+            <Link to="/admin/courses" className="text-indigo-600 dark:text-indigo-400 hover:underline mb-2 inline-block">
               ← Back to Courses
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">Lessons</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lessons</h1>
           </div>
           <Link to={`/admin/courses/${courseId}/lessons/new`}>
             <Button>Create Lesson</Button>
@@ -73,14 +73,14 @@ const AdminLessons: React.FC = () => {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-medium text-gray-500">#{lesson.orderIndex}</span>
-                    <h3 className="text-xl font-bold text-gray-900">{lesson.title}</h3>
-                    <span className="text-sm text-gray-500 capitalize">({lesson.type})</span>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">#{lesson.orderIndex}</span>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{lesson.title}</h3>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 capitalize">({lesson.type})</span>
                   </div>
                 </div>
 
                 <div className="flex gap-2 ml-4">
-                  <Link 
+                  <Link
                     to={`/admin/lessons/${lesson.id}/challenges`}
                     state={{ courseId }}
                   >
@@ -97,7 +97,7 @@ const AdminLessons: React.FC = () => {
                     size="sm"
                     variant="ghost"
                     onClick={() => handleDelete(lesson.id)}
-                    className="text-red-600 hover:bg-red-50"
+                    className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     Delete
                   </Button>

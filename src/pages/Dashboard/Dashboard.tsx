@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
     return (
       <MainLayout title="Dashboard">
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </MainLayout>
     );
@@ -53,14 +53,14 @@ const Dashboard: React.FC = () => {
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               Welcome back,{" "}
               <span className="text-gradient">
                 {data?.user.name || user?.profileData?.name}
               </span>
               !
             </h1>
-            <p className="mt-1 text-gray-500">
+            <p className="mt-1 text-gray-500 dark:text-gray-400">
               Ready to continue your learning journey?
             </p>
           </div>
@@ -73,9 +73,9 @@ const Dashboard: React.FC = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-indigo-50 border-indigo-100">
+          <Card className="bg-indigo-50 border-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/20">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-indigo-100 rounded-lg text-indigo-600">
+              <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg text-indigo-600 dark:text-indigo-400">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -91,19 +91,19 @@ const Dashboard: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Current Streak
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {stats?.streakDays || 0} Days
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-violet-50 border-violet-100">
+          <Card className="bg-violet-50 border-violet-100 dark:bg-violet-500/10 dark:border-violet-500/20">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-violet-100 rounded-lg text-violet-600">
+              <div className="p-3 bg-violet-100 dark:bg-violet-500/20 rounded-lg text-violet-600 dark:text-violet-400">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -119,17 +119,19 @@ const Dashboard: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Total XP</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Total XP
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {stats?.totalXp || 0} XP
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-emerald-50 border-emerald-100">
+          <Card className="bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-emerald-100 rounded-lg text-emerald-600">
+              <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -145,10 +147,10 @@ const Dashboard: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Lessons Completed
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {stats?.lessonsCompleted || 0}
                 </p>
               </div>
@@ -159,25 +161,25 @@ const Dashboard: React.FC = () => {
         {/* Quick Resume */}
         {data?.quickResume ? (
           <div className="mt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Jump Back In
             </h2>
-            <Card className="hover:border-indigo-200 cursor-pointer group">
+            <Card className="hover:border-indigo-200 dark:hover:border-indigo-500/30 cursor-pointer group">
               <Link
                 to={`/lessons/${data.quickResume.lessonId}`}
                 className="flex justify-between items-center"
               >
                 <div>
-                  <p className="text-sm text-indigo-600 font-medium mb-1">
+                  <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium mb-1">
                     {data.quickResume.courseTitle}
                   </p>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {data.quickResume.lessonTitle}
                   </h3>
                 </div>
-                <div className="bg-indigo-50 p-2 rounded-full group-hover:bg-indigo-100 transition-colors">
+                <div className="bg-indigo-50 dark:bg-indigo-500/20 p-2 rounded-full group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/30 transition-colors">
                   <svg
-                    className="w-6 h-6 text-indigo-600"
+                    className="w-6 h-6 text-indigo-600 dark:text-indigo-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -202,10 +204,10 @@ const Dashboard: React.FC = () => {
         ) : (
           <div className="mt-8">
             <Card className="text-center py-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 No courses in progress
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Start your first course today to begin learning.
               </p>
               <Link to="/courses">
@@ -217,36 +219,48 @@ const Dashboard: React.FC = () => {
 
         {/* Enrolled Courses */}
         <div className="mt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">My Courses</h2>
-            {enrollments.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {enrollments.map((enrollment) => (
-                        <Card key={enrollment.courseId} className="hover:border-indigo-200 transition-colors">
-                            <div className="mb-4">
-                                <h3 className="font-bold text-lg text-gray-900 mb-1">{enrollment.title}</h3>
-                                <div className="text-sm text-gray-500">
-                                    {enrollment.completedLessons} / {enrollment.totalLessons} Lessons
-                                </div>
-                            </div>
-                            
-                            <div className="w-full bg-gray-100 rounded-full h-2 mb-4">
-                                <div 
-                                    className="bg-indigo-600 h-2 rounded-full" 
-                                    style={{ width: `${Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100)}%` }}
-                                />
-                            </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            My Courses
+          </h2>
+          {enrollments.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {enrollments.map((enrollment) => (
+                <Card
+                  key={enrollment.courseId}
+                  className="hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors"
+                >
+                  <div className="mb-4">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                      {enrollment.title}
+                    </h3>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {enrollment.completedLessons} / {enrollment.totalLessons}{" "}
+                      Lessons
+                    </div>
+                  </div>
 
-                            <Link to={`/courses/${enrollment.courseId}`}>
-                                <Button size="sm" variant="outline" className="w-full">
-                                    Continue Learning
-                                </Button>
-                            </Link>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                 <p className="text-gray-500">You are not enrolled in any courses yet.</p>
-            )}
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-4">
+                    <div
+                      className="bg-indigo-600 dark:bg-indigo-400 h-2 rounded-full"
+                      style={{
+                        width: `${Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100)}%`,
+                      }}
+                    />
+                  </div>
+
+                  <Link to={`/courses/${enrollment.courseId}`}>
+                    <Button size="sm" variant="outline" className="w-full">
+                      Continue Learning
+                    </Button>
+                  </Link>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400">
+              You are not enrolled in any courses yet.
+            </p>
+          )}
         </div>
       </div>
     </MainLayout>

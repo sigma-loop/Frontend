@@ -1,5 +1,6 @@
 import React from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
+import { useTheme } from "../../../contexts/ThemeContext";
 
 interface CodeEditorProps {
   language: string;
@@ -14,15 +15,17 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   onChange,
   onMount,
 }) => {
+  const { isDark } = useTheme();
+
   return (
-    <div className="h-full w-full border border-gray-200 rounded-md overflow-hidden bg-white">
+    <div className="h-full w-full border border-gray-200 dark:border-gray-800 rounded-md overflow-hidden bg-white dark:bg-[#1e1e1e]">
       <Editor
         height="100%"
         language={language}
         value={value}
         onChange={onChange}
         onMount={onMount}
-        theme="light" // Using light theme as requested
+        theme={isDark ? "vs-dark" : "light"}
         options={{
           minimap: { enabled: false },
           fontSize: 14,

@@ -10,13 +10,13 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center lg:pt-32">
-          <h1 className="mx-auto max-w-4xl font-display text-5xl font-medium tracking-tight text-slate-900 sm:text-7xl">
+          <h1 className="mx-auto max-w-4xl font-display text-5xl font-medium tracking-tight text-slate-900 dark:text-gray-100 sm:text-7xl">
             Master the Future with{" "}
             <span className="relative whitespace-nowrap text-indigo-600">
-              <span className="relative text-gradient">Lambda LAP</span>
+              <span className="relative text-gradient">SigmaLoop</span>
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-700">
+          <p className="mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-700 dark:text-gray-300">
             The ultimate learning platform designed to accelerate your coding
             journey. Interactive lessons, real-time challenges, and expert
             mentorship.
@@ -25,7 +25,7 @@ const Home: React.FC = () => {
             <Link to="/register">
               <Button
                 size="lg"
-                className="rounded-full px-8 py-3 text-lg shadow-xl shadow-indigo-200"
+                className="rounded-full px-8 py-3 text-lg shadow-xl shadow-indigo-200 dark:shadow-indigo-500/10"
               >
                 Get Started Free
               </Button>
@@ -48,7 +48,7 @@ const Home: React.FC = () => {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <Card className="hover:scale-105 transition-transform duration-300 border-t-4 border-indigo-500">
             <div className="p-4">
-              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 text-indigo-600">
+              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -63,10 +63,10 @@ const Home: React.FC = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Interactive Learning
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Practice as you learn with our integrated code challenges.
                 Immediate feedback to help you improve faster.
               </p>
@@ -75,7 +75,7 @@ const Home: React.FC = () => {
 
           <Card className="hover:scale-105 transition-transform duration-300 border-t-4 border-purple-500">
             <div className="p-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 text-purple-600">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 text-purple-600 dark:text-purple-400">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -90,10 +90,10 @@ const Home: React.FC = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Structured Curriculum
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Follow a carefully crafted path from beginner to expert. Don't
                 waste time figuring out what to learn next.
               </p>
@@ -102,7 +102,7 @@ const Home: React.FC = () => {
 
           <Card className="hover:scale-105 transition-transform duration-300 border-t-4 border-pink-500">
             <div className="p-4">
-              <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-4 text-pink-600">
+              <div className="w-12 h-12 bg-pink-100 dark:bg-pink-500/20 rounded-xl flex items-center justify-center mb-4 text-pink-600 dark:text-pink-400">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -117,10 +117,10 @@ const Home: React.FC = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Expert Mentorship
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Get stuck? Connect with industry experts and get unstuck in
                 minutes. You are never learning alone.
               </p>

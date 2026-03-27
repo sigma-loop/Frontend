@@ -29,6 +29,12 @@ const ChallengeForm: React.FC = () => {
       cpp: "",
       java: "",
     },
+    injectedCodes: {
+      python: "",
+      javascript: "",
+      cpp: "",
+      java: "",
+    },
     testCases: [
       { input: "", expectedOutput: "", isHidden: false },
     ],
@@ -53,6 +59,7 @@ const ChallengeForm: React.FC = () => {
           description: challenge.description || "",
           starterCodes: challenge.starterCodes as any,
           solutionCodes: (challenge.solutionCodes || {}) as any,
+          injectedCodes: (challenge.injectedCodes || {}) as any,
           testCases: challenge.testCases?.map(tc => ({
             input: typeof tc.input === 'string' ? tc.input : JSON.stringify(tc.input),
             expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : JSON.stringify(tc.expectedOutput),
@@ -87,12 +94,20 @@ const ChallengeForm: React.FC = () => {
           starterCodes[lang] = code;
         }
       });
-      
+
       // Filter out empty solution codes
       const solutionCodes: Record<string, string> = {};
       Object.entries(formData.solutionCodes).forEach(([lang, code]) => {
         if (code.trim()) {
           solutionCodes[lang] = code;
+        }
+      });
+
+      // Filter out empty injected codes
+      const injectedCodes: Record<string, string> = {};
+      Object.entries(formData.injectedCodes).forEach(([lang, code]) => {
+        if (code.trim()) {
+          injectedCodes[lang] = code;
         }
       });
 
@@ -102,6 +117,7 @@ const ChallengeForm: React.FC = () => {
           description: formData.description,
           starterCodes,
           solutionCodes,
+          injectedCodes,
           testCases,
         } as ChallengeUpdatePayload);
       } else {
@@ -111,6 +127,7 @@ const ChallengeForm: React.FC = () => {
           description: formData.description,
           starterCodes,
           solutionCodes,
+          injectedCodes,
           testCases,
         } as ChallengeCreatePayload);
       }
@@ -142,7 +159,7 @@ const ChallengeForm: React.FC = () => {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </AdminLayout>
     );
@@ -151,27 +168,27 @@ const ChallengeForm: React.FC = () => {
   return (
     <AdminLayout title={isEdit ? "Edit Challenge" : "Create Challenge"}>
       <div className="max-w-5xl">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">
           {isEdit ? "Edit Challenge" : "Create Challenge"}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
-            <h2 className="text-xl font-bold mb-4">Basic Info</h2>
+            <h2 className="text-xl font-bold mb-4 dark:text-gray-100">Basic Info</h2>
             <div>
               {isEdit && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-[#0d1117] rounded-lg border border-gray-200 dark:border-gray-800">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">
                     Challenge ID
                   </span>
-                  <code className="text-sm font-mono text-gray-700 select-all">
+                  <code className="text-sm font-mono text-gray-700 dark:text-gray-300 select-all">
                     {challengeId}
                   </code>
                 </div>
               )}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Title
                   </label>
                   <Input
@@ -181,11 +198,11 @@ const ChallengeForm: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Description / Instructions (Markdown)
                   </label>
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
                     rows={6}
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -197,17 +214,17 @@ const ChallengeForm: React.FC = () => {
           </Card>
 
           <Card>
-            <h2 className="text-xl font-bold mb-4">Starter Codes</h2>
+            <h2 className="text-xl font-bold mb-4 dark:text-gray-100">Starter Codes</h2>
             <div className="space-y-4">
               {Object.entries(formData.starterCodes)
                 .filter(([key]) => !key.startsWith('_')) // Hide _id or internal fields
                 .map(([lang, code]) => (
                 <div key={lang}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
                     {lang}
                   </label>
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
                     rows={6}
                     value={code}
                     onChange={(e) => setFormData({
@@ -220,17 +237,17 @@ const ChallengeForm: React.FC = () => {
               ))}
             </div>
           </Card>
-          
+
           <Card>
-            <h2 className="text-xl font-bold mb-4">Solution Codes (Required)</h2>
+            <h2 className="text-xl font-bold mb-4 dark:text-gray-100">Solution Codes (Required)</h2>
             <div className="space-y-4">
               {Object.entries(formData.solutionCodes).map(([lang, code]) => (
                 <div key={lang}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
                     {lang}
                   </label>
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
                     rows={6}
                     value={code}
                     onChange={(e) => setFormData({
@@ -245,24 +262,51 @@ const ChallengeForm: React.FC = () => {
           </Card>
 
           <Card>
+            <h2 className="text-xl font-bold mb-1 dark:text-gray-100">Injected Code (I/O Wrapper)</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              This code is appended after the student's code before execution. Use it to read stdin,
+              call the student's function, and print the result. Students do not see this code.
+            </p>
+            <div className="space-y-4">
+              {Object.entries(formData.injectedCodes).map(([lang, code]) => (
+                <div key={lang}>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
+                    {lang}
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm bg-amber-50 dark:bg-amber-900/20 dark:text-gray-100"
+                    rows={4}
+                    value={code}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      injectedCodes: { ...formData.injectedCodes, [lang]: e.target.value }
+                    })}
+                    placeholder={`# Example for Python:\nprint(get_grade(int(input())))`}
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Test Cases</h2>
+              <h2 className="text-xl font-bold dark:text-gray-100">Test Cases</h2>
               <Button type="button" size="sm" onClick={addTestCase}>
                 Add Test Case
               </Button>
             </div>
             <div className="space-y-4">
               {formData.testCases.map((testCase, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={index} className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-medium">Test Case #{index + 1}</h3>
+                    <h3 className="font-medium dark:text-gray-100">Test Case #{index + 1}</h3>
                     {formData.testCases.length > 1 && (
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
                         onClick={() => removeTestCase(index)}
-                        className="text-red-600"
+                        className="text-red-600 dark:text-red-400"
                       >
                         Remove
                       </Button>
@@ -271,11 +315,11 @@ const ChallengeForm: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Input
                       </label>
                       <textarea
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
                         rows={3}
                         value={testCase.input}
                         onChange={(e) => {
@@ -288,11 +332,11 @@ const ChallengeForm: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Expected Output
                       </label>
                       <textarea
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
                         rows={3}
                         value={testCase.expectedOutput}
                         onChange={(e) => {
@@ -317,7 +361,7 @@ const ChallengeForm: React.FC = () => {
                         }}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700">Hidden (students won't see this)</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Hidden (students won't see this)</span>
                     </label>
                   </div>
                 </div>

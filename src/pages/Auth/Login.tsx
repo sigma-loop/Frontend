@@ -47,13 +47,13 @@ const Login: React.FC = () => {
     >
       <form className="space-y-6" onSubmit={handleSubmit}>
         {error && (
-          <div className="rounded-md bg-red-50 p-4 border border-red-100">
+          <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 border border-red-100 dark:border-red-800">
             <div className="flex">
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-400">
                   Login failed
                 </h3>
-                <div className="mt-2 text-sm text-red-700">
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                   <p>{error}</p>
                 </div>
               </div>
@@ -89,7 +89,7 @@ const Login: React.FC = () => {
           <div className="text-sm">
             <a
               href="#"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               Forgot your password?
             </a>
@@ -106,11 +106,11 @@ const Login: React.FC = () => {
       <div className="mt-6">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
+            <div className="w-full border-t border-gray-300 dark:border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">
-              New to Lambda LAP?
+            <span className="bg-white dark:bg-white/5 px-2 text-gray-500 dark:text-gray-400">
+              New to SigmaLoop?
             </span>
           </div>
         </div>

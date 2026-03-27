@@ -28,7 +28,7 @@ const AdminDashboard: React.FC = () => {
 
       const coursesData = coursesRes.data.data || [];
       const usersCount = usersRes.data.data?.pagination?.total || 0;
-      
+
       const totalLessons = coursesData.reduce((acc, course) => acc + (course.meta.lessonCount || 0), 0);
 
       setCourses(coursesData);
@@ -49,7 +49,7 @@ const AdminDashboard: React.FC = () => {
       value: courses.length,
       icon: BookOpen,
       color: "text-indigo-600",
-      bg: "bg-indigo-100",
+      bg: "bg-indigo-100 dark:bg-indigo-500/20",
       link: "/admin/courses",
     },
     {
@@ -57,7 +57,7 @@ const AdminDashboard: React.FC = () => {
       value: stats.users,
       icon: Users,
       color: "text-emerald-600",
-      bg: "bg-emerald-100",
+      bg: "bg-emerald-100 dark:bg-emerald-500/20",
       link: "/admin/users",
     },
     {
@@ -65,7 +65,7 @@ const AdminDashboard: React.FC = () => {
       value: stats.lessons,
       icon: FileText,
       color: "text-violet-600",
-      bg: "bg-violet-100",
+      bg: "bg-violet-100 dark:bg-violet-500/20",
       link: "/admin/courses", // Redirect to courses as we don't have a global lesson list
     },
   ];
@@ -74,7 +74,7 @@ const AdminDashboard: React.FC = () => {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </AdminLayout>
     );
@@ -84,22 +84,22 @@ const AdminDashboard: React.FC = () => {
     <AdminLayout title="Overview">
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Overview</h1>
-          <p className="text-gray-500 mt-1">Welcome to the Lambda LAP administration panel.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Overview</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Welcome to the SigmaLoop administration panel.</p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {statCards.map((stat) => (
             <Link key={stat.label} to={stat.link}>
-              <Card className="hover:border-indigo-200 transition-colors cursor-pointer">
+              <Card className="hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors cursor-pointer">
                 <div className="flex items-center space-x-4">
                   <div className={`p-3 rounded-lg ${stat.bg} ${stat.color}`}>
                     <stat.icon className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
                   </div>
                 </div>
               </Card>
@@ -112,15 +112,15 @@ const AdminDashboard: React.FC = () => {
         {/* Courses List */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Courses</h2>
-            <Link to="/admin/courses/new" className="text-indigo-600 hover:underline text-sm font-medium">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Courses</h2>
+            <Link to="/admin/courses/new" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
               + Create New
             </Link>
           </div>
-          
+
           {courses.length === 0 ? (
              <Card>
-                <p className="text-gray-500 text-center py-8">No courses available.</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No courses available.</p>
              </Card>
           ) : (
             <div className="grid gap-4">
@@ -128,23 +128,23 @@ const AdminDashboard: React.FC = () => {
                 <Card key={course.id}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900">{course.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">{course.description}</p>
-                      <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{course.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{course.description}</p>
+                      <div className="flex gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
                         <span>{course.meta.lessonCount || 0} Lessons</span>
-                        <span className="capitalize px-2 py-0.5 bg-gray-100 rounded text-xs items-center inline-flex">
+                        <span className="capitalize px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs items-center inline-flex">
                           {course.difficulty.toLowerCase()}
                         </span>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <Link to={`/admin/courses/${course.id}/lessons`}>
-                        <div className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700">
+                        <div className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300">
                           Manage Lessons
                         </div>
                       </Link>
                       <Link to={`/admin/courses/${course.id}/edit`}>
-                         <div className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700">
+                         <div className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300">
                           Edit
                         </div>
                       </Link>
