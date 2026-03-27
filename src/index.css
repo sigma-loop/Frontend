@@ -3,6 +3,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", sans-serif;
   --font-display: "Outfit", sans-serif;
@@ -13,6 +15,10 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   h1,
@@ -30,12 +36,68 @@
     @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
   }
 
+  .dark .glass-panel {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-xl shadow-black/20;
+  }
+
   .glass-card {
     @apply bg-white/60 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  .dark .glass-card {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg shadow-black/20 hover:shadow-xl;
   }
 
   /* Premium gradient text */
   .text-gradient {
     @apply bg-clip-text text-transparent bg-linear-to-r from-indigo-600 to-violet-600;
+  }
+
+  .dark .text-gradient {
+    @apply from-indigo-400 to-violet-400;
+  }
+
+  /* Custom scrollbar for chat panels */
+  .chat-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .chat-scrollbar:hover {
+    scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 9999px;
+  }
+
+  .chat-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.4);
+  }
+
+  .chat-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.6);
+  }
+
+  .dark .chat-scrollbar:hover {
+    scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+  }
+
+  .dark .chat-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+
+  .dark .chat-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(75, 85, 99, 0.7);
   }
 }
