@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Rounded dark background -->
+  <rect width="64" height="64" rx="14" fill="#0d1117"/>
+
+  <!-- Sigma (left angular half) -->
+  <path
+    d="M 30 14 L 10 14 L 24 32 L 10 50 L 30 50"
+    fill="none" stroke="#A78BFA" stroke-width="5.5"
+    stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Loop (right circular half) -->
+  <path
+    d="M 30 14 C 43 14, 54 21, 54 32 C 54 43, 43 50, 30 50"
+    fill="none" stroke="#A78BFA" stroke-width="5.5"
+    stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Terminal cursor >_ accent -->
+  <path
+    d="M 25 27 L 30 32 L 25 37"
+    fill="none" stroke="#2DD4BF" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="32" y1="37" x2="37" y2="37"
+    stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
