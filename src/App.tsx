@@ -7,6 +7,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
@@ -33,7 +34,7 @@ const ProtectedRoute = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen justify-center items-center">
+      <div className="flex h-screen justify-center items-center bg-gray-50 dark:bg-[#0d1117] dark:text-gray-100">
         Loading...
       </div>
     );
@@ -48,7 +49,7 @@ const PublicRoute = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen justify-center items-center">
+      <div className="flex h-screen justify-center items-center bg-gray-50 dark:bg-[#0d1117] dark:text-gray-100">
         Loading...
       </div>
     );
@@ -59,6 +60,7 @@ const PublicRoute = () => {
 
 function App() {
   return (
+    <ThemeProvider>
     <Router>
       <AuthProvider>
         <Routes>
@@ -103,6 +105,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </Router>
+    </ThemeProvider>
   );
 }
 
