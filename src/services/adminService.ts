@@ -31,6 +31,7 @@ export interface ChallengeCreatePayload {
   description?: string;
   starterCodes: Record<string, string>;
   solutionCodes?: Record<string, string>;
+  injectedCodes?: Record<string, string>;
   testCases: Array<{
     input: any;
     expectedOutput: any;

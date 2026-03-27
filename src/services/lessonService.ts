@@ -2,7 +2,6 @@ import api from "./api";
 import {
   type JSendResponse,
   type Lesson,
-  type Course,
   type ExecutionResult,
   type SubmissionResult,
 } from "../types/api";

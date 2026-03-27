@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import CodeEditor from "./CodeEditor";
 import OutputPanel from "./OutputPanel";
-import { Play, Send } from "lucide-react";
+import { Play, Send, Trophy } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import { type CodeExecutionPayload, lessonService } from "../../../services/lessonService";
 import { type Challenge, type ExecutionResult } from "../../../types/api";
@@ -12,19 +12,24 @@ interface CodeWorkspaceProps {
   language?: string;
   challengeId?: string;
   challenge?: Challenge;
+  availableLanguages?: string[];
+  onLanguageChange?: (lang: string) => void;
 }
 
 const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   initialCode,
   language = "python",
   challengeId,
-  challenge,
+  challenge: _challenge,
+  availableLanguages = [],
+  onLanguageChange,
 }) => {
   const [code, setCode] = useState(initialCode);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [lessonCompleted, setLessonCompleted] = useState(false);
 
   const handleRun = async () => {
     setIsLoading(true);
@@ -33,7 +38,7 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       const payload: CodeExecutionPayload = {
         challengeId,
         code,
-        language: language === "python" ? "python" : language, // Normalize or map languages if needed
+        language,
       };
       const result = await lessonService.runCode(payload);
       setExecutionResult(result);
@@ -64,15 +69,14 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       const payload = {
         challengeId,
         code,
-        language: language === "python" ? "python" : language,
+        language,
       };
-      
+
       const result = await lessonService.submitCode(payload);
       setExecutionResult(result);
-      
-      if (result.status === "PASSED") {
-          // Could add toast or confetti here
-          console.log("Submission successful", result.submissionId);
+
+      if (result.lessonCompleted) {
+        setLessonCompleted(true);
       }
 
     } catch (error) {
@@ -89,13 +93,27 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-gray-200">
+    <div className="flex flex-col h-full bg-white dark:bg-[#161b22] border-l border-gray-200 dark:border-gray-800">
       {/* Toolkit / Header */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-gray-200 bg-white shadow-sm z-10">
+      <div className="h-14 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161b22] shadow-sm z-10">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-700 text-sm bg-gray-100 px-2 py-1 rounded capitalize">
-            {language}
-          </span>
+          {availableLanguages.length > 1 ? (
+            <select
+              value={language}
+              onChange={(e) => onLanguageChange?.(e.target.value)}
+              className="text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize"
+            >
+              {availableLanguages.map((lang) => (
+                <option key={lang} value={lang}>
+                  {lang}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded capitalize">
+              {language}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -120,6 +138,16 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         </div>
       </div>
 
+      {/* Lesson Completed Banner */}
+      {lessonCompleted && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/30 border-b border-green-200 dark:border-green-800 animate-pulse">
+          <Trophy className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+            Lesson Complete! +50 XP
+          </span>
+        </div>
+      )}
+
       {/* Editor & Output Split */}
       <div className="flex-1 h-full min-h-0">
         <PanelGroup orientation="vertical">
@@ -130,14 +158,13 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               onChange={(val) => setCode(val || "")}
             />
           </Panel>
-          <PanelResizeHandle className="h-2 bg-gray-100 border-y border-gray-200 hover:bg-blue-50 transition-colors flex items-center justify-center cursor-row-resize">
-             <div className="w-8 h-1 bg-gray-300 rounded-full" />
+          <PanelResizeHandle className="h-2 bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center justify-center cursor-row-resize">
+             <div className="w-8 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
           </PanelResizeHandle>
           <Panel defaultSize={30} minSize={20}>
-            <OutputPanel 
-                executionResult={executionResult} 
+            <OutputPanel
+                executionResult={executionResult}
                 isLoading={isLoading}
-                testCases={challenge?.testCases} 
             />
           </Panel>
         </PanelGroup>

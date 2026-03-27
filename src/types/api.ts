@@ -64,9 +64,10 @@ export interface Challenge {
   lessonId?: string;
   title: string;
   description?: string;
-  starterCodes: Record<string, string>; // Map of language -> code
+  starterCodes: Record<string, string>;
   solutionCodes?: Record<string, string>;
-  testCases?: TestCase[]; // Students see only isHidden: false
+  injectedCodes?: Record<string, string>;
+  testCases?: TestCase[];
 }
 
 export interface TestCase {
@@ -75,18 +76,35 @@ export interface TestCase {
   isHidden: boolean;
 }
 
+export interface TestResult {
+  index: number;
+  passed: boolean;
+  status: string;
+  isHidden?: boolean;
+  input: string | null;
+  expectedOutput: string | null;
+  actualOutput: string | null;
+  stderr: string | null;
+  time: string | null;
+  memory: number | null;
+}
+
 export interface ExecutionResult {
-  status: "PASS" | "FAIL" | "ERROR" | "PASSED" | "FAILED"; // Covering both run and submit variations
-  stdout: string;
+  status: "PASS" | "FAIL" | "ERROR" | "PASSED" | "FAILED";
+  stdout?: string;
   stderr?: string;
+  testResults?: TestResult[];
   metrics: {
     runtime: string;
     memoryUsed?: string;
+    passed?: number;
+    total?: number;
   };
 }
 
 export interface SubmissionResult extends ExecutionResult {
   submissionId: string;
+  lessonCompleted?: boolean;
 }
 
 export interface DashboardResponse {
@@ -104,6 +122,29 @@ export interface DashboardResponse {
     lessonId: string;
     lessonTitle: string;
   } | null;
+}
+
+// ──────────────────────────────────────────
+// Chat
+// ──────────────────────────────────────────
+
+export interface ChatThread {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "USER" | "ASSISTANT" | "SYSTEM";
+  content: string;
+  createdAt: string;
+}
+
+export interface SendMessageResponse {
+  userMessage: ChatMessage;
+  assistantMessage: ChatMessage;
 }
 
 export interface SyllabusResponse {
