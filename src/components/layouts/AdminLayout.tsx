@@ -8,6 +8,7 @@ import {
   Users,
   Home,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -35,6 +36,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     { icon: Home, label: "Overview", path: "/admin" },
     { icon: BookOpen, label: "Courses", path: "/admin/courses" },
     { icon: Users, label: "Users", path: "/admin/users" },
+    { icon: Sparkles, label: "Generated Content", path: "/admin/generated-content" },
   ];
 
   return (

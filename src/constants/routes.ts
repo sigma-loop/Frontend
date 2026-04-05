@@ -14,6 +14,11 @@ export const ROUTES = {
   CURRICULUM: "/curriculum",
   MENTOR: "/mentor",
 
+  // AI Generated
+  GENERATE_COURSE: "/generate-course",
+  GENERATED_COURSES: "/generated-courses/:courseId",
+  GENERATED_LESSON: "/generated-lessons/:lessonId",
+
   // Admin
   ADMIN: "/admin",
   ADMIN_DASHBOARD: "/admin",
@@ -27,6 +32,7 @@ export const ROUTES = {
   ADMIN_CHALLENGE_NEW: "/admin/challenges/new",
   ADMIN_CHALLENGE_EDIT: "/admin/challenges/:challengeId/edit",
   ADMIN_USERS: "/admin/users",
+  ADMIN_GENERATED_CONTENT: "/admin/generated-content",
 } as const;
 
 /**
