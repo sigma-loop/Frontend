@@ -131,6 +131,8 @@ export interface DashboardResponse {
 export interface ChatThread {
   id: string;
   title: string;
+  scope?: "GENERAL" | "LESSON" | "COURSE";
+  scopeId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -146,6 +148,52 @@ export interface SendMessageResponse {
   userMessage: ChatMessage;
   assistantMessage: ChatMessage;
 }
+
+// ──────────────────────────────────────────
+// AI Generated Content
+// ──────────────────────────────────────────
+
+export interface GeneratedCourse {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  tags: string[];
+  lessonCount?: number;
+  lessons?: GeneratedLessonSummary[];
+  generatedAt: string;
+}
+
+export interface GeneratedLessonSummary {
+  id: string;
+  title: string;
+  orderIndex: number;
+  challengeCount?: number;
+  generatedAt?: string;
+}
+
+export interface GeneratedLesson {
+  id: string;
+  courseId: string;
+  isGeneratedCourse?: boolean;
+  title: string;
+  contentMarkdown: string;
+  orderIndex: number;
+  challenges: GeneratedChallenge[];
+  generatedAt: string;
+}
+
+export interface GeneratedChallenge {
+  id: string;
+  title: string;
+  starterCodes: Record<string, string>;
+  solutionCodes: Record<string, string>;
+  testCases: TestCase[];
+}
+
+// ──────────────────────────────────────────
+// Syllabus
+// ──────────────────────────────────────────
 
 export interface SyllabusResponse {
   course: {
