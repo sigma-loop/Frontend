@@ -1,6 +1,7 @@
 // Challenge Form Component
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Editor from "@monaco-editor/react";
 import AdminLayout from "../../../components/layouts/AdminLayout";
 import Card from "../../../components/ui/Card";
 import Button from "../../../components/ui/Button";
@@ -8,6 +9,8 @@ import Input from "../../../components/ui/Input";
 import { adminService, type ChallengeCreatePayload, type ChallengeUpdatePayload } from "../../../services/adminService";
 import api from "../../../services/api";
 import type { JSendResponse, Challenge } from "../../../types/api";
+import { LANGUAGE_DISPLAY_NAMES, LANGUAGE_MONACO_IDS, type SupportedLanguage } from "../../../constants";
+import { useTheme } from "../../../contexts/ThemeContext";
 
 const ChallengeForm: React.FC = () => {
   const { lessonId, challengeId } = useParams<{ lessonId: string; challengeId: string }>();
@@ -41,6 +44,10 @@ const ChallengeForm: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
+  const [starterTab, setStarterTab] = useState("python");
+  const [solutionTab, setSolutionTab] = useState("python");
+  const [injectedTab, setInjectedTab] = useState("python");
+  const { isDark } = useTheme();
 
   useEffect(() => {
     if (isEdit) {
@@ -54,12 +61,13 @@ const ChallengeForm: React.FC = () => {
       const response = await api.get<JSendResponse<Challenge>>(`/challenges/${challengeId}`);
       const challenge = response.data.data;
       if (challenge) {
+        const defaultCodes = { python: "", javascript: "", cpp: "", java: "" };
         setFormData({
           title: challenge.title,
           description: challenge.description || "",
-          starterCodes: challenge.starterCodes as any,
-          solutionCodes: (challenge.solutionCodes || {}) as any,
-          injectedCodes: (challenge.injectedCodes || {}) as any,
+          starterCodes: { ...defaultCodes, ...challenge.starterCodes } as any,
+          solutionCodes: { ...defaultCodes, ...(challenge.solutionCodes || {}) } as any,
+          injectedCodes: { ...defaultCodes, ...(challenge.injectedCodes || {}) } as any,
           testCases: challenge.testCases?.map(tc => ({
             input: typeof tc.input === 'string' ? tc.input : JSON.stringify(tc.input),
             expectedOutput: typeof tc.expectedOutput === 'string' ? tc.expectedOutput : JSON.stringify(tc.expectedOutput),
@@ -215,76 +223,137 @@ const ChallengeForm: React.FC = () => {
 
           <Card>
             <h2 className="text-xl font-bold mb-4 dark:text-gray-100">Starter Codes</h2>
-            <div className="space-y-4">
-              {Object.entries(formData.starterCodes)
-                .filter(([key]) => !key.startsWith('_')) // Hide _id or internal fields
-                .map(([lang, code]) => (
-                <div key={lang}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
-                    {lang}
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
-                    rows={6}
-                    value={code}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      starterCodes: { ...formData.starterCodes, [lang]: e.target.value }
-                    })}
-                    placeholder={`def solution():\n    pass`}
-                  />
-                </div>
-              ))}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-3">
+              {Object.keys(formData.starterCodes)
+                .filter((k) => !k.startsWith("_"))
+                .map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setStarterTab(lang)}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      starterTab === lang
+                        ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {LANGUAGE_DISPLAY_NAMES[lang as SupportedLanguage] || lang}
+                  </button>
+                ))}
+            </div>
+            <div className="h-64 rounded-md overflow-hidden border border-gray-200 dark:border-gray-800">
+              <Editor
+                key={`starter-${starterTab}`}
+                height="100%"
+                language={LANGUAGE_MONACO_IDS[starterTab as SupportedLanguage] || starterTab}
+                value={formData.starterCodes[starterTab as keyof typeof formData.starterCodes] || ""}
+                onChange={(val) =>
+                  setFormData({
+                    ...formData,
+                    starterCodes: { ...formData.starterCodes, [starterTab]: val || "" },
+                  })
+                }
+                theme={isDark ? "vs-dark" : "light"}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  padding: { top: 12, bottom: 12 },
+                }}
+              />
             </div>
           </Card>
 
           <Card>
             <h2 className="text-xl font-bold mb-4 dark:text-gray-100">Solution Codes (Required)</h2>
-            <div className="space-y-4">
-              {Object.entries(formData.solutionCodes).map(([lang, code]) => (
-                <div key={lang}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
-                    {lang}
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm dark:bg-gray-800/50 dark:text-gray-100"
-                    rows={6}
-                    value={code}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      solutionCodes: { ...formData.solutionCodes, [lang]: e.target.value }
-                    })}
-                    placeholder={`def solution():\n    return result`}
-                  />
-                </div>
-              ))}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-3">
+              {Object.keys(formData.solutionCodes)
+                .filter((k) => !k.startsWith("_"))
+                .map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setSolutionTab(lang)}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      solutionTab === lang
+                        ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {LANGUAGE_DISPLAY_NAMES[lang as SupportedLanguage] || lang}
+                  </button>
+                ))}
+            </div>
+            <div className="h-64 rounded-md overflow-hidden border border-gray-200 dark:border-gray-800">
+              <Editor
+                key={`solution-${solutionTab}`}
+                height="100%"
+                language={LANGUAGE_MONACO_IDS[solutionTab as SupportedLanguage] || solutionTab}
+                value={formData.solutionCodes[solutionTab as keyof typeof formData.solutionCodes] || ""}
+                onChange={(val) =>
+                  setFormData({
+                    ...formData,
+                    solutionCodes: { ...formData.solutionCodes, [solutionTab]: val || "" },
+                  })
+                }
+                theme={isDark ? "vs-dark" : "light"}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  padding: { top: 12, bottom: 12 },
+                }}
+              />
             </div>
           </Card>
 
           <Card>
             <h2 className="text-xl font-bold mb-1 dark:text-gray-100">Injected Code (I/O Wrapper)</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              This code is appended after the student's code before execution. Use it to read stdin,
-              call the student's function, and print the result. Students do not see this code.
+              This code is appended after the student&apos;s code before execution. Use it to read stdin,
+              call the student&apos;s function, and print the result. Students do not see this code.
             </p>
-            <div className="space-y-4">
-              {Object.entries(formData.injectedCodes).map(([lang, code]) => (
-                <div key={lang}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 capitalize">
-                    {lang}
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 font-mono text-sm bg-amber-50 dark:bg-amber-900/20 dark:text-gray-100"
-                    rows={4}
-                    value={code}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      injectedCodes: { ...formData.injectedCodes, [lang]: e.target.value }
-                    })}
-                    placeholder={`# Example for Python:\nprint(get_grade(int(input())))`}
-                  />
-                </div>
-              ))}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 mb-3">
+              {Object.keys(formData.injectedCodes)
+                .filter((k) => !k.startsWith("_"))
+                .map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setInjectedTab(lang)}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      injectedTab === lang
+                        ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                        : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {LANGUAGE_DISPLAY_NAMES[lang as SupportedLanguage] || lang}
+                  </button>
+                ))}
+            </div>
+            <div className="h-52 rounded-md overflow-hidden border border-amber-200 dark:border-amber-800/50">
+              <Editor
+                key={`injected-${injectedTab}`}
+                height="100%"
+                language={LANGUAGE_MONACO_IDS[injectedTab as SupportedLanguage] || injectedTab}
+                value={formData.injectedCodes[injectedTab as keyof typeof formData.injectedCodes] || ""}
+                onChange={(val) =>
+                  setFormData({
+                    ...formData,
+                    injectedCodes: { ...formData.injectedCodes, [injectedTab]: val || "" },
+                  })
+                }
+                theme={isDark ? "vs-dark" : "light"}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  padding: { top: 12, bottom: 12 },
+                }}
+              />
             </div>
           </Card>
 
