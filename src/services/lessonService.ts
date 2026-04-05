@@ -10,12 +10,14 @@ export interface CodeExecutionPayload {
   challengeId?: string;
   code: string;
   language: string;
+  generated?: boolean;
 }
 
 export interface SubmissionPayload {
   challengeId: string;
   code: string;
   language: string;
+  generated?: boolean;
 }
 
 export const lessonService = {

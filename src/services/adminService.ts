@@ -159,4 +159,17 @@ export const adminService = {
   deleteUser: async (userId: string): Promise<void> => {
     await api.delete(`/users/${userId}`);
   },
+
+  // ============ Generated Content (Admin) ============
+  getGeneratedContentOverview: async (): Promise<any[]> => {
+    const response = await api.get<JSendResponse<any[]>>("/ai/admin/overview");
+    return response.data.data || [];
+  },
+
+  getUserGeneratedContent: async (userId: string): Promise<any> => {
+    const response = await api.get<JSendResponse<any>>(
+      `/ai/admin/users/${userId}/content`
+    );
+    return response.data.data || {};
+  },
 };

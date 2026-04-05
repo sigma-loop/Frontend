@@ -7,16 +7,32 @@ import type {
 } from "../types/api";
 
 export const chatService = {
-  listThreads: async (): Promise<ChatThread[]> => {
-    const response =
-      await api.get<JSendResponse<ChatThread[]>>("/chat/threads");
+  listThreads: async (
+    scope?: string,
+    scopeId?: string
+  ): Promise<ChatThread[]> => {
+    const params = new URLSearchParams();
+    if (scope) params.set("scope", scope);
+    if (scopeId) params.set("scopeId", scopeId);
+    const query = params.toString();
+    const response = await api.get<JSendResponse<ChatThread[]>>(
+      `/chat/threads${query ? `?${query}` : ""}`
+    );
     return response.data.data || [];
   },
 
-  createThread: async (title: string): Promise<ChatThread> => {
+  createThread: async (
+    title: string,
+    scope?: string,
+    scopeId?: string
+  ): Promise<ChatThread> => {
     const response = await api.post<JSendResponse<ChatThread>>(
       "/chat/threads",
-      { title }
+      {
+        title,
+        ...(scope && { scope }),
+        ...(scopeId && { scopeId }),
+      }
     );
     if (!response.data.data) {
       throw new Error("Failed to create thread");
