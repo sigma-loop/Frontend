@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import CodeEditor from "./CodeEditor";
 import OutputPanel from "./OutputPanel";
@@ -14,6 +14,7 @@ interface CodeWorkspaceProps {
   challenge?: Challenge;
   availableLanguages?: string[];
   onLanguageChange?: (lang: string) => void;
+  isGenerated?: boolean;
 }
 
 const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
@@ -23,13 +24,47 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   challenge: _challenge,
   availableLanguages = [],
   onLanguageChange,
+  isGenerated = false,
 }) => {
-  const [code, setCode] = useState(initialCode);
+  // Load saved code from localStorage, fall back to initialCode
+  const storageKey = challengeId ? `sigmaloop_code_${challengeId}_${language}` : "";
+
+  const [code, setCode] = useState(() => {
+    if (storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) return saved;
+    }
+    return initialCode;
+  });
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(false);
   const [lessonCompleted, setLessonCompleted] = useState(false);
+
+  // Save to localStorage on change
+  const handleCodeChange = useCallback(
+    (val: string | undefined) => {
+      const newCode = val || "";
+      setCode(newCode);
+      if (storageKey) {
+        localStorage.setItem(storageKey, newCode);
+      }
+    },
+    [storageKey]
+  );
+
+  // Sync when challengeId or language changes (component re-keyed)
+  useEffect(() => {
+    if (storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) {
+        setCode(saved);
+        return;
+      }
+    }
+    setCode(initialCode);
+  }, [storageKey, initialCode]);
 
   const handleRun = async () => {
     setIsLoading(true);
@@ -39,6 +74,7 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         challengeId,
         code,
         language,
+        ...(isGenerated && { generated: true }),
       };
       const result = await lessonService.runCode(payload);
       setExecutionResult(result);
@@ -70,6 +106,7 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         challengeId,
         code,
         language,
+        ...(isGenerated && { generated: true }),
       };
 
       const result = await lessonService.submitCode(payload);
@@ -155,7 +192,7 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             <CodeEditor
               language={language}
               value={code}
-              onChange={(val) => setCode(val || "")}
+              onChange={handleCodeChange}
             />
           </Panel>
           <PanelResizeHandle className="h-2 bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center justify-center cursor-row-resize">
