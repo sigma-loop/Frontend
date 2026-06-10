@@ -35,22 +35,30 @@ const Navbar: React.FC = () => {
 
   const navLinks = (
     <>
-      <NavLink to="/courses" className={({ isActive }) => textClasses(isActive)}>
-        Courses
-      </NavLink>
-      <NavLink to="/curriculum" className={({ isActive }) => textClasses(isActive)}>
-        Curriculum
-      </NavLink>
       <NavLink to="/mentor" className={({ isActive }) => textClasses(isActive)}>
-        Mentors
+        Mentor
       </NavLink>
-      {isAuthenticated && (user?.role === "ADMIN" || user?.role === "INSTRUCTOR") && (
-        <NavLink to="/admin/courses" className={({ isActive }) => textClasses(isActive)}>
+      {isAuthenticated && (
+        <NavLink
+          to="/my-courses"
+          className={({ isActive }) => textClasses(isActive)}
+        >
+          My Courses
+        </NavLink>
+      )}
+      {isAuthenticated && user?.role === "ADMIN" && (
+        <NavLink
+          to="/admin"
+          className={({ isActive }) => textClasses(isActive)}
+        >
           Admin Panel
         </NavLink>
       )}
       {isAuthenticated && (
-        <NavLink to="/dashboard" className={({ isActive }) => textClasses(isActive)}>
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) => textClasses(isActive)}
+        >
           Dashboard
         </NavLink>
       )}
@@ -60,29 +68,24 @@ const Navbar: React.FC = () => {
   const mobileNavLinks = (
     <>
       <NavLink
-        to="/courses"
-        className={({ isActive }) => mobileTextClasses(isActive)}
-        onClick={() => setMobileOpen(false)}
-      >
-        Courses
-      </NavLink>
-      <NavLink
-        to="/curriculum"
-        className={({ isActive }) => mobileTextClasses(isActive)}
-        onClick={() => setMobileOpen(false)}
-      >
-        Curriculum
-      </NavLink>
-      <NavLink
         to="/mentor"
         className={({ isActive }) => mobileTextClasses(isActive)}
         onClick={() => setMobileOpen(false)}
       >
-        Mentors
+        Mentor
       </NavLink>
-      {isAuthenticated && (user?.role === "ADMIN" || user?.role === "INSTRUCTOR") && (
+      {isAuthenticated && (
         <NavLink
-          to="/admin/courses"
+          to="/my-courses"
+          className={({ isActive }) => mobileTextClasses(isActive)}
+          onClick={() => setMobileOpen(false)}
+        >
+          My Courses
+        </NavLink>
+      )}
+      {isAuthenticated && user?.role === "ADMIN" && (
+        <NavLink
+          to="/admin"
           className={({ isActive }) => mobileTextClasses(isActive)}
           onClick={() => setMobileOpen(false)}
         >
@@ -183,9 +186,7 @@ const Navbar: React.FC = () => {
       {/* Mobile menu dropdown */}
       {mobileOpen && (
         <div className="md:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#0d1117] shadow-lg">
-          <div className="px-4 py-3 space-y-1">
-            {mobileNavLinks}
-          </div>
+          <div className="px-4 py-3 space-y-1">{mobileNavLinks}</div>
 
           <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3">
             {isAuthenticated ? (

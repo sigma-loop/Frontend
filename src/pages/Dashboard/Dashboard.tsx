@@ -5,13 +5,13 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../services/api";
-import type { JSendResponse, DashboardResponse, Enrollment } from "../../types/api";
-import { userService } from "../../services/userService";
+import type { JSendResponse, DashboardResponse, Course } from "../../types/api";
+import { courseService } from "../../services/courseService";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [data, setData] = useState<DashboardResponse | null>(null);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,8 +23,8 @@ const Dashboard: React.FC = () => {
           setData(response.data.data);
         }
 
-        const enrollmentsData = await userService.getEnrollments();
-        setEnrollments(enrollmentsData);
+        const myCourses = await courseService.getMyCourses();
+        setCourses(myCourses);
       } catch (error) {
         console.error("Failed to load dashboard:", error);
       } finally {
@@ -65,8 +65,8 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
           <div className="mt-4 md:mt-0">
-            <Link to="/courses">
-              <Button>Explore Courses</Button>
+            <Link to="/mentor">
+              <Button>Talk to your Mentor</Button>
             </Link>
           </div>
         </div>
@@ -208,49 +208,50 @@ const Dashboard: React.FC = () => {
                 No courses in progress
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Start your first course today to begin learning.
+                Tell your mentor what you want to learn and it will build a
+                personalized course for you.
               </p>
-              <Link to="/courses">
-                <Button variant="primary">Browse Courses</Button>
+              <Link to="/mentor">
+                <Button variant="primary">Talk to your Mentor</Button>
               </Link>
             </Card>
           </div>
         )}
 
-        {/* Enrolled Courses */}
+        {/* My Courses */}
         <div className="mt-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             My Courses
           </h2>
-          {enrollments.length > 0 ? (
+          {courses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrollments.map((enrollment) => (
+              {courses.map((course) => (
                 <Card
-                  key={enrollment.courseId}
+                  key={course.id}
                   className="hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors"
                 >
                   <div className="mb-4">
                     <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
-                      {enrollment.title}
+                      {course.title}
                     </h3>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {enrollment.completedLessons} / {enrollment.totalLessons}{" "}
-                      Lessons
+                      {course.meta.lessonCount} Lessons ·{" "}
+                      {course.status === "READY"
+                        ? `${course.difficulty.toLowerCase()}`
+                        : course.status.toLowerCase()}
                     </div>
                   </div>
 
-                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-4">
-                    <div
-                      className="bg-indigo-600 dark:bg-indigo-400 h-2 rounded-full"
-                      style={{
-                        width: `${Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100)}%`,
-                      }}
-                    />
-                  </div>
-
-                  <Link to={`/courses/${enrollment.courseId}`}>
-                    <Button size="sm" variant="outline" className="w-full">
-                      Continue Learning
+                  <Link to={`/courses/${course.id}`}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={course.status !== "READY"}
+                    >
+                      {course.status === "READY"
+                        ? "Continue Learning"
+                        : "Generating…"}
                     </Button>
                   </Link>
                 </Card>
@@ -258,7 +259,7 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             <p className="text-gray-500 dark:text-gray-400">
-              You are not enrolled in any courses yet.
+              You don't have any courses yet — ask your mentor for one.
             </p>
           )}
         </div>

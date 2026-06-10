@@ -8,31 +8,16 @@ export const ROUTES = {
   LOGIN: "/login",
   REGISTER: "/register",
   DASHBOARD: "/dashboard",
-  COURSES: "/courses",
+  MENTOR: "/mentor",
+  MY_COURSES: "/my-courses",
   COURSE_DETAILS: "/courses/:courseId",
   LESSON: "/lessons/:lessonId",
-  CURRICULUM: "/curriculum",
-  MENTOR: "/mentor",
-
-  // AI Generated
-  GENERATE_COURSE: "/generate-course",
-  GENERATED_COURSES: "/generated-courses/:courseId",
-  GENERATED_LESSON: "/generated-lessons/:lessonId",
 
   // Admin
   ADMIN: "/admin",
   ADMIN_DASHBOARD: "/admin",
-  ADMIN_COURSES: "/admin/courses",
-  ADMIN_COURSE_NEW: "/admin/courses/new",
-  ADMIN_COURSE_EDIT: "/admin/courses/:courseId/edit",
-  ADMIN_LESSONS: "/admin/lessons",
-  ADMIN_LESSON_NEW: "/admin/lessons/new",
-  ADMIN_LESSON_EDIT: "/admin/lessons/:lessonId/edit",
-  ADMIN_CHALLENGES: "/admin/challenges",
-  ADMIN_CHALLENGE_NEW: "/admin/challenges/new",
-  ADMIN_CHALLENGE_EDIT: "/admin/challenges/:challengeId/edit",
   ADMIN_USERS: "/admin/users",
-  ADMIN_GENERATED_CONTENT: "/admin/generated-content",
+  ADMIN_JOBS: "/admin/jobs",
 } as const;
 
 /**

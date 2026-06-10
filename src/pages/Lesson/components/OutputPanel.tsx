@@ -36,7 +36,9 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
           )}
           <span
             className={`text-sm font-medium ${
-              result.passed ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+              result.passed
+                ? "text-green-700 dark:text-green-400"
+                : "text-red-700 dark:text-red-400"
             }`}
           >
             Test {result.index}
@@ -67,7 +69,9 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
         )}
         <span
           className={`text-sm font-medium ${
-            result.passed ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+            result.passed
+              ? "text-green-700 dark:text-green-400"
+              : "text-red-700 dark:text-red-400"
           }`}
         >
           Test {result.index}
@@ -115,7 +119,9 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
             <div>
               <span
                 className={`text-xs font-semibold uppercase tracking-wide ${
-                  result.passed ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                  result.passed
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-red-600 dark:text-red-400"
                 }`}
               >
                 Your Output
@@ -178,11 +184,15 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
       <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0d1117] overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
           <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-          <span className="text-sm font-medium text-red-700 dark:text-red-400">Error</span>
+          <span className="text-sm font-medium text-red-700 dark:text-red-400">
+            Error
+          </span>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           <pre className="text-sm text-red-700 dark:text-red-400 font-mono whitespace-pre-wrap">
-            {executionResult.stderr || executionResult.stdout || "Unknown error"}
+            {executionResult.stderr ||
+              executionResult.stdout ||
+              "Unknown error"}
           </pre>
         </div>
       </div>
@@ -191,8 +201,7 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
 
   const passed = executionResult.metrics?.passed ?? 0;
   const total = executionResult.metrics?.total ?? 0;
-  const allPassed =
-    executionResult.status === "PASSED" || executionResult.status === "PASS";
+  const allPassed = executionResult.status === "PASSED";
 
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0d1117] overflow-hidden">
@@ -212,7 +221,9 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
           )}
           <span
             className={`text-sm font-semibold ${
-              allPassed ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+              allPassed
+                ? "text-green-700 dark:text-green-400"
+                : "text-red-700 dark:text-red-400"
             }`}
           >
             {allPassed ? "All Tests Passed" : "Some Tests Failed"}
@@ -253,7 +264,9 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
           <div className="font-mono text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap p-2">
             {executionResult.stdout}
             {executionResult.stderr && (
-              <div className="mt-2 text-red-600 dark:text-red-400">{executionResult.stderr}</div>
+              <div className="mt-2 text-red-600 dark:text-red-400">
+                {executionResult.stderr}
+              </div>
             )}
           </div>
         )}

@@ -1,44 +1,44 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
+import {
+  Panel,
+  Group as PanelGroup,
+  Separator as PanelResizeHandle,
+} from "react-resizable-panels";
 import CodeEditor from "./CodeEditor";
 import OutputPanel from "./OutputPanel";
 import { Play, Send, Trophy } from "lucide-react";
 import Button from "../../../components/ui/Button";
-import { type CodeExecutionPayload, lessonService } from "../../../services/lessonService";
-import { type Challenge, type ExecutionResult } from "../../../types/api";
+import { lessonService } from "../../../services/lessonService";
+import { type ExecutionResult } from "../../../types/api";
 
-interface CodeWorkspaceProps {
+interface ProgrammingWorkspaceProps {
   initialCode: string;
   language?: string;
-  challengeId?: string;
-  challenge?: Challenge;
+  challengeId: string;
   availableLanguages?: string[];
   onLanguageChange?: (lang: string) => void;
-  isGenerated?: boolean;
 }
 
-const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
+/**
+ * Workspace for PROGRAMMING challenges: Monaco editor + Judge0-backed
+ * run/submit against the AI-generated test cases.
+ */
+const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
   initialCode,
   language = "python",
   challengeId,
-  challenge: _challenge,
   availableLanguages = [],
   onLanguageChange,
-  isGenerated = false,
 }) => {
   // Load saved code from localStorage, fall back to initialCode
-  const storageKey = challengeId ? `sigmaloop_code_${challengeId}_${language}` : "";
+  const storageKey = `sigmaloop_code_${challengeId}_${language}`;
 
   const [code, setCode] = useState(() => {
-    if (storageKey) {
-      const saved = localStorage.getItem(storageKey);
-      if (saved !== null) return saved;
-    }
-    return initialCode;
+    const saved = localStorage.getItem(storageKey);
+    return saved !== null ? saved : initialCode;
   });
-  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(
-    null
-  );
+  const [executionResult, setExecutionResult] =
+    useState<ExecutionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lessonCompleted, setLessonCompleted] = useState(false);
 
@@ -47,43 +47,34 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
     (val: string | undefined) => {
       const newCode = val || "";
       setCode(newCode);
-      if (storageKey) {
-        localStorage.setItem(storageKey, newCode);
-      }
+      localStorage.setItem(storageKey, newCode);
     },
     [storageKey]
   );
 
   // Sync when challengeId or language changes (component re-keyed)
   useEffect(() => {
-    if (storageKey) {
-      const saved = localStorage.getItem(storageKey);
-      if (saved !== null) {
-        setCode(saved);
-        return;
-      }
-    }
-    setCode(initialCode);
+    const saved = localStorage.getItem(storageKey);
+    setCode(saved !== null ? saved : initialCode);
   }, [storageKey, initialCode]);
 
   const handleRun = async () => {
     setIsLoading(true);
     setExecutionResult(null);
     try {
-      const payload: CodeExecutionPayload = {
+      const result = await lessonService.runCode({
         challengeId,
         code,
         language,
-        ...(isGenerated && { generated: true }),
-      };
-      const result = await lessonService.runCode(payload);
+      });
       setExecutionResult(result);
     } catch (error) {
       console.error("Execution error:", error);
       setExecutionResult({
         status: "ERROR",
         stdout: "",
-        stderr: error instanceof Error ? error.message : "Unknown error occurred",
+        stderr:
+          error instanceof Error ? error.message : "Unknown error occurred",
         metrics: { runtime: "0s" },
       });
     } finally {
@@ -92,36 +83,26 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!challengeId) {
-      // If no challenge, we can't really "submit" a solution in the persistent sense
-      // Fallback to running or show error
-      await handleRun();
-      return;
-    }
-
     setIsLoading(true);
     setExecutionResult(null);
     try {
-      const payload = {
+      const result = await lessonService.submitCode({
         challengeId,
         code,
         language,
-        ...(isGenerated && { generated: true }),
-      };
-
-      const result = await lessonService.submitCode(payload);
+      });
       setExecutionResult(result);
 
       if (result.lessonCompleted) {
         setLessonCompleted(true);
       }
-
     } catch (error) {
       console.error("Submission error:", error);
       setExecutionResult({
         status: "ERROR",
         stdout: "",
-        stderr: error instanceof Error ? error.message : "Unknown error occurred",
+        stderr:
+          error instanceof Error ? error.message : "Unknown error occurred",
         metrics: { runtime: "0s" },
       });
     } finally {
@@ -196,12 +177,12 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             />
           </Panel>
           <PanelResizeHandle className="h-2 bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center justify-center cursor-row-resize">
-             <div className="w-8 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+            <div className="w-8 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
           </PanelResizeHandle>
           <Panel defaultSize={30} minSize={20}>
             <OutputPanel
-                executionResult={executionResult}
-                isLoading={isLoading}
+              executionResult={executionResult}
+              isLoading={isLoading}
             />
           </Panel>
         </PanelGroup>
@@ -210,4 +191,4 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   );
 };
 
-export default CodeWorkspace;
+export default ProgrammingWorkspace;

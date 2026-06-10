@@ -3,13 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../ui/Button";
 import PageMeta from "../common/PageMeta";
-import {
-  BookOpen,
-  Users,
-  Home,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { Users, Home, LogOut, Sparkles } from "lucide-react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -20,9 +14,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Check if user is admin or instructor
+  // ADMIN only — there is no INSTRUCTOR role
   React.useEffect(() => {
-    if (!user || (user.role !== "ADMIN" && user.role !== "INSTRUCTOR")) {
+    if (!user || user.role !== "ADMIN") {
       navigate("/dashboard");
     }
   }, [user, navigate]);
@@ -34,9 +28,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
 
   const navItems = [
     { icon: Home, label: "Overview", path: "/admin" },
-    { icon: BookOpen, label: "Courses", path: "/admin/courses" },
     { icon: Users, label: "Users", path: "/admin/users" },
-    { icon: Sparkles, label: "Generated Content", path: "/admin/generated-content" },
+    { icon: Sparkles, label: "Curriculum Jobs", path: "/admin/jobs" },
   ];
 
   return (

@@ -24,6 +24,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
+    setUser(null);
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       if (token) {
@@ -59,12 +65,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setUser(newUser);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
-  };
-
   const refreshUser = async () => {
     if (!token) return;
     try {
@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -1,14 +1,26 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
-import { ChevronLeft, ChevronRight, Home, MessageCircle, X, BookOpen, Code2 } from "lucide-react";
+import {
+  Panel,
+  Group as PanelGroup,
+  Separator as PanelResizeHandle,
+} from "react-resizable-panels";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  MessageCircle,
+  X,
+  BookOpen,
+  Code2,
+  Calculator,
+} from "lucide-react";
 import { lessonService } from "../../services/lessonService";
-import { userService } from "../../services/userService";
 import type { Lesson, Challenge } from "../../types/api";
-import { SUPPORTED_LANGUAGES } from "../../constants";
+import { CHALLENGE_KINDS, SUPPORTED_LANGUAGES } from "../../constants";
 import LessonContent from "./components/LessonContent";
-import CodeWorkspace from "./components/CodeWorkspace";
-import ChatWidget from "../../components/common/ChatWidget";
+import ChallengeWorkspace from "./components/ChallengeWorkspace";
+import ChatWidget from "../../components/chat/ChatWidget";
 import Button from "../../components/ui/Button";
 import PageMeta from "../../components/common/PageMeta";
 
@@ -21,7 +33,9 @@ const LessonView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(
+    null
+  );
   const [selectedLanguage, setSelectedLanguage] = useState<string>("python");
   const [showChat, setShowChat] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("lesson");
@@ -34,32 +48,21 @@ const LessonView = () => {
       setError(null);
       try {
         const data = await lessonService.getLesson(lessonId);
-
-        // Check enrollment if courseId is available on the lesson
-        if (data.courseId) {
-            const enrollments = await userService.getEnrollments();
-            const isEnrolled = enrollments.some(e => e.courseId === data.courseId);
-
-            if (!isEnrolled) {
-                navigate(`/courses/${data.courseId}`);
-                return;
-            }
-        }
-
         setLesson(data);
 
         // Default to first challenge if available
         if (data.challenges && data.challenges.length > 0) {
-            const ch = data.challenges[0];
-            setActiveChallenge(ch);
+          const ch = data.challenges[0];
+          setActiveChallenge(ch);
+          if (ch.kind === CHALLENGE_KINDS.PROGRAMMING) {
             const langs = Object.keys(ch.starterCodes || {}).filter(
               (k) => !k.startsWith("_") && ch.starterCodes[k]
             );
             if (langs.length > 0) setSelectedLanguage(langs[0]);
+          }
         } else {
-            setActiveChallenge(null);
+          setActiveChallenge(null);
         }
-
       } catch (err) {
         console.error(err);
         setError("Failed to load lesson");
@@ -84,70 +87,85 @@ const LessonView = () => {
       <div className="h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0d1117] text-red-500 dark:text-red-400 gap-4">
         <p>{error || "Lesson not found"}</p>
         <Button onClick={() => navigate("/dashboard")} variant="outline">
-            Back to Dashboard
+          Back to Dashboard
         </Button>
       </div>
     );
   }
 
   // Derive available languages from active challenge's starter codes.
-  const challengeLanguages = activeChallenge
-    ? Object.keys(activeChallenge.starterCodes || {}).filter(
-        (k) => !k.startsWith("_") && activeChallenge.starterCodes[k]
-      )
-    : [];
+  const challengeLanguages =
+    activeChallenge?.kind === CHALLENGE_KINDS.PROGRAMMING
+      ? Object.keys(activeChallenge.starterCodes || {}).filter(
+          (k) => !k.startsWith("_") && activeChallenge.starterCodes[k]
+        )
+      : [];
   const availableLanguages =
-    challengeLanguages.length > 0 ? challengeLanguages : [...SUPPORTED_LANGUAGES];
+    challengeLanguages.length > 0
+      ? challengeLanguages
+      : [...SUPPORTED_LANGUAGES];
 
-  const initialCode = activeChallenge
-    ? activeChallenge.starterCodes?.[selectedLanguage] || ""
-    : "";
-
+  // The problem statement is appended below the lesson content:
+  // markdown prompt for PROGRAMMING, LaTeX problem for MATH.
+  const challengeStatement =
+    activeChallenge?.kind === CHALLENGE_KINDS.MATH
+      ? activeChallenge.problemLatex
+      : activeChallenge?.description;
   const lessonContentMarkdown =
-    (lesson.contentMarkdown || "# No content available")
-    + (activeChallenge?.description
-      ? "\n\n---\n\n" + activeChallenge.description
-      : "");
+    (lesson.contentMarkdown || "# No content available") +
+    (challengeStatement ? "\n\n---\n\n" + challengeStatement : "");
+
+  const isMathChallenge = activeChallenge?.kind === CHALLENGE_KINDS.MATH;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white dark:bg-[#161b22] text-gray-900 dark:text-gray-100">
-      <PageMeta title={lesson.title} description={`Learn ${lesson.title} on SigmaLoop`} />
+      <PageMeta
+        title={lesson.title}
+        description={`Learn ${lesson.title} on SigmaLoop`}
+      />
 
       {/* Navigation Header */}
       <header className="h-12 md:h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-3 md:px-4 bg-white dark:bg-[#161b22] shadow-sm flex-shrink-0 z-20">
         <div className="flex items-center gap-2 md:gap-4 min-w-0">
-            <Link to="/dashboard" className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full text-gray-600 dark:text-gray-400 flex-shrink-0">
-                <Home className="w-4 h-4 md:w-5 md:h-5"/>
-            </Link>
-            <div className="flex flex-col min-w-0">
-                <span className="text-[10px] md:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lesson {lesson.orderIndex}</span>
-                <h1 className="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{lesson.title}</h1>
-            </div>
+          <Link
+            to="/dashboard"
+            className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full text-gray-600 dark:text-gray-400 flex-shrink-0"
+          >
+            <Home className="w-4 h-4 md:w-5 md:h-5" />
+          </Link>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[10px] md:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Lesson {lesson.orderIndex}
+            </span>
+            <h1 className="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+              {lesson.title}
+            </h1>
+          </div>
         </div>
 
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-            {lesson.prevLessonId && (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/lessons/${lesson.prevLessonId}`)}
-                    className="text-gray-600 dark:text-gray-400 px-2 md:px-3"
-                >
-                    <ChevronLeft className="w-4 h-4"/>
-                    <span className="hidden sm:inline ml-1">Previous</span>
-                </Button>
-            )}
-             {lesson.nextLessonId && (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/lessons/${lesson.nextLessonId}`)}
-                    className="px-2 md:px-3"
-                >
-                    <span className="hidden sm:inline mr-1">Next</span>
-                    <ChevronRight className="w-4 h-4"/>
-                </Button>
-            )}
+          {lesson.prevLessonId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/lessons/${lesson.prevLessonId}`)}
+              className="text-gray-600 dark:text-gray-400 px-2 md:px-3"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="hidden sm:inline ml-1">Previous</span>
+            </Button>
+          )}
+          {lesson.nextLessonId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/lessons/${lesson.nextLessonId}`)}
+              className="px-2 md:px-3"
+            >
+              <span className="hidden sm:inline mr-1">Next</span>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </header>
 
@@ -174,8 +192,12 @@ const LessonView = () => {
                 : "text-gray-500 dark:text-gray-400"
             }`}
           >
-            <Code2 className="w-3.5 h-3.5" />
-            Code
+            {isMathChallenge ? (
+              <Calculator className="w-3.5 h-3.5" />
+            ) : (
+              <Code2 className="w-3.5 h-3.5" />
+            )}
+            {isMathChallenge ? "Math" : "Code"}
           </button>
           <button
             onClick={() => setMobileTab("chat")}
@@ -195,15 +217,19 @@ const LessonView = () => {
           {mobileTab === "lesson" ? (
             <LessonContent content={lessonContentMarkdown} />
           ) : mobileTab === "code" ? (
-            <CodeWorkspace
-              key={`mobile-${activeChallenge?.id}-${selectedLanguage}`}
-              initialCode={initialCode}
-              language={selectedLanguage}
-              challengeId={activeChallenge?.id}
-              challenge={activeChallenge || undefined}
-              availableLanguages={availableLanguages}
-              onLanguageChange={setSelectedLanguage}
-            />
+            activeChallenge ? (
+              <ChallengeWorkspace
+                key={`mobile-${activeChallenge.id}-${selectedLanguage}`}
+                challenge={activeChallenge}
+                selectedLanguage={selectedLanguage}
+                availableLanguages={availableLanguages}
+                onLanguageChange={setSelectedLanguage}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                No challenge available
+              </div>
+            )
           ) : (
             <ChatWidget
               scope="LESSON"
@@ -219,61 +245,68 @@ const LessonView = () => {
       {/* ── Desktop Layout (resizable panels) ── */}
       <div className="flex-1 min-h-0 relative hidden md:block">
         <PanelGroup orientation="horizontal">
-            {/* Left Panel: Content */}
-            <Panel defaultSize={showChat ? 30 : 40} minSize={20} className="bg-white dark:bg-[#161b22]">
-                <LessonContent content={lessonContentMarkdown} />
-            </Panel>
+          {/* Left Panel: Content */}
+          <Panel
+            defaultSize={showChat ? 30 : 40}
+            minSize={20}
+            className="bg-white dark:bg-[#161b22]"
+          >
+            <LessonContent content={lessonContentMarkdown} />
+          </Panel>
 
-            <PanelResizeHandle className="w-2 bg-gray-100 dark:bg-gray-800 border-x border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center justify-center cursor-col-resize z-10">
-                <div className="h-8 w-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
-            </PanelResizeHandle>
+          <PanelResizeHandle className="w-2 bg-gray-100 dark:bg-gray-800 border-x border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center justify-center cursor-col-resize z-10">
+            <div className="h-8 w-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+          </PanelResizeHandle>
 
-            {/* Middle Panel: Code Workspace */}
-            <Panel defaultSize={showChat ? 40 : 60} minSize={30}>
-                <CodeWorkspace
-                    key={`${activeChallenge?.id}-${selectedLanguage}`}
-                    initialCode={initialCode}
-                    language={selectedLanguage}
-                    challengeId={activeChallenge?.id}
-                    challenge={activeChallenge || undefined}
-                    availableLanguages={availableLanguages}
-                    onLanguageChange={setSelectedLanguage}
-                />
-            </Panel>
-
-            {/* Right Panel: AI Chat (conditional) */}
-            {showChat && (
-              <>
-                <PanelResizeHandle className="w-2 bg-gray-100 dark:bg-gray-800 border-x border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center justify-center cursor-col-resize z-10">
-                    <div className="h-8 w-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
-                </PanelResizeHandle>
-                <Panel defaultSize={30} minSize={20}>
-                  <div className="h-full flex flex-col bg-white dark:bg-[#161b22] border-l border-gray-200 dark:border-gray-800">
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Lesson AI Assistant
-                      </span>
-                      <button
-                        onClick={() => setShowChat(false)}
-                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex-1 min-h-0">
-                      <ChatWidget
-                        scope="LESSON"
-                        scopeId={lessonId}
-                        placeholder="Ask about this lesson..."
-                        welcomeTitle="Lesson Assistant"
-                        welcomeSubtitle={`Ask me anything about "${lesson.title}"`}
-                      />
-                    </div>
-                  </div>
-                </Panel>
-              </>
+          {/* Middle Panel: Challenge Workspace */}
+          <Panel defaultSize={showChat ? 40 : 60} minSize={30}>
+            {activeChallenge ? (
+              <ChallengeWorkspace
+                key={`${activeChallenge.id}-${selectedLanguage}`}
+                challenge={activeChallenge}
+                selectedLanguage={selectedLanguage}
+                availableLanguages={availableLanguages}
+                onLanguageChange={setSelectedLanguage}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                No challenge available for this lesson
+              </div>
             )}
+          </Panel>
 
+          {/* Right Panel: AI Chat (conditional) */}
+          {showChat && (
+            <>
+              <PanelResizeHandle className="w-2 bg-gray-100 dark:bg-gray-800 border-x border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors flex items-center justify-center cursor-col-resize z-10">
+                <div className="h-8 w-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+              </PanelResizeHandle>
+              <Panel defaultSize={30} minSize={20}>
+                <div className="h-full flex flex-col bg-white dark:bg-[#161b22] border-l border-gray-200 dark:border-gray-800">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Lesson AI Assistant
+                    </span>
+                    <button
+                      onClick={() => setShowChat(false)}
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    <ChatWidget
+                      scope="LESSON"
+                      scopeId={lessonId}
+                      placeholder="Ask about this lesson..."
+                      welcomeTitle="Lesson Assistant"
+                      welcomeSubtitle={`Ask me anything about "${lesson.title}"`}
+                    />
+                  </div>
+                </div>
+              </Panel>
+            </>
+          )}
         </PanelGroup>
 
         {/* Floating AI button (desktop) */}

@@ -30,13 +30,13 @@ const Home: React.FC = () => {
                 Get Started Free
               </Button>
             </Link>
-            <Link to="/courses">
+            <Link to="/mentor">
               <Button
                 variant="secondary"
                 size="lg"
                 className="rounded-full px-8 py-3 text-lg"
               >
-                Explore Courses
+                Talk to your Mentor
               </Button>
             </Link>
           </div>

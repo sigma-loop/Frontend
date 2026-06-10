@@ -1,57 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { MessageCircle, X, Sparkles, Loader2, BookOpen } from "lucide-react";
+import { MessageCircle, X, Sparkles, AlertTriangle } from "lucide-react";
 import MainLayout from "../../components/layouts/MainLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
-import ChatWidget from "../../components/common/ChatWidget";
-import api from "../../services/api";
-import type { JSendResponse, Course, SyllabusResponse, GeneratedLessonSummary } from "../../types/api";
-import { userService } from "../../services/userService";
-import { aiService } from "../../services/aiService";
-import { useAuth } from "../../contexts/AuthContext";
+import ChatWidget from "../../components/chat/ChatWidget";
+import { courseService } from "../../services/courseService";
+import { ROUTES, buildRoute } from "../../constants/routes";
+import type { Course, SyllabusResponse } from "../../types/api";
 
+/**
+ * Read-only view of one of the user's generated courses.
+ * Ownership is enforced server-side (non-owned courses 404).
+ */
 const CourseDetails: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [syllabus, setSyllabus] = useState<SyllabusResponse | null>(null);
-  const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEnrolling, setIsEnrolling] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [generatedLessons, setGeneratedLessons] = useState<GeneratedLessonSummary[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatePrompt, setGeneratePrompt] = useState("");
 
   useEffect(() => {
     const fetchCourseData = async () => {
       if (!courseId) return;
       setIsLoading(true);
       try {
-        // Fetch basic details
-        const detailsRes = await api.get<JSendResponse<Course>>(
-          `/courses/${courseId}`
-        );
-        if (detailsRes.data.success && detailsRes.data.data) {
-          setCourse(detailsRes.data.data);
-        }
-
-        // Fetch syllabus with progress
-        const syllabusRes = await api.get<JSendResponse<SyllabusResponse>>(
-          `/courses/${courseId}/syllabus`
-        );
-        if (syllabusRes.data.success && syllabusRes.data.data) {
-          setSyllabus(syllabusRes.data.data);
-        }
-
-        // Check if enrolled
-        if (user) {
-            const enrollments = await userService.getEnrollments();
-            const enrolled = enrollments.some(e => e.courseId === courseId);
-            setIsEnrolled(enrolled);
-        }
+        const [details, syllabusData] = await Promise.all([
+          courseService.getCourse(courseId),
+          courseService.getSyllabus(courseId),
+        ]);
+        setCourse(details);
+        setSyllabus(syllabusData);
       } catch (error) {
         console.error("Failed to load course details:", error);
       } finally {
@@ -60,71 +40,7 @@ const CourseDetails: React.FC = () => {
     };
 
     fetchCourseData();
-  }, [courseId, user]);
-
-  // Load generated lessons when enrolled
-  useEffect(() => {
-    if (!courseId || !isEnrolled) return;
-    const loadGenerated = async () => {
-      try {
-        const lessons = await aiService.getGeneratedLessons(courseId);
-        setGeneratedLessons(lessons);
-      } catch (err) {
-        console.error("Failed to load generated lessons:", err);
-      }
-    };
-    loadGenerated();
-  }, [courseId, isEnrolled]);
-
-  const handleGenerateLesson = async () => {
-    if (!courseId || isGenerating) return;
-    setIsGenerating(true);
-    try {
-      const prompt = generatePrompt.trim() || undefined;
-      const lesson = await aiService.generateLesson(courseId, prompt);
-      setGeneratedLessons((prev) => [
-        ...prev,
-        {
-          id: lesson.id,
-          title: lesson.title,
-          orderIndex: lesson.orderIndex,
-          generatedAt: lesson.generatedAt,
-        },
-      ]);
-      setGeneratePrompt("");
-    } catch (err) {
-      console.error("Failed to generate lesson:", err);
-      alert("Failed to generate lesson. Please try again.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleEnroll = async () => {
-      if (!courseId) return;
-      setIsEnrolling(true);
-      try {
-          await userService.enrollInCourse(courseId);
-          setIsEnrolled(true);
-
-          // Refresh syllabus to unlock content
-          try {
-            const syllabusRes = await api.get<JSendResponse<SyllabusResponse>>(
-              `/courses/${courseId}/syllabus`
-            );
-            if (syllabusRes.data.success && syllabusRes.data.data) {
-              setSyllabus(syllabusRes.data.data);
-            }
-          } catch (err) {
-            console.error("Failed to refresh syllabus:", err);
-          }
-      } catch (error) {
-          console.error("Failed to enroll:", error);
-          alert("Failed to enroll in course. Please try again.");
-      } finally {
-          setIsEnrolling(false);
-      }
-  };
+  }, [courseId]);
 
   if (isLoading) {
     return (
@@ -140,10 +56,12 @@ const CourseDetails: React.FC = () => {
     return (
       <MainLayout title="Course Not Found">
         <div className="text-center py-12">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Course not found</h2>
-          <Link to="/courses">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Course not found
+          </h2>
+          <Link to={ROUTES.MY_COURSES}>
             <Button variant="ghost" className="mt-4">
-              Back to courses
+              Back to my courses
             </Button>
           </Link>
         </div>
@@ -172,6 +90,7 @@ const CourseDetails: React.FC = () => {
           </div>
         );
       case "IN_PROGRESS":
+      case "UNLOCKED":
         return (
           <div className="bg-indigo-100 dark:bg-indigo-500/20 p-2 rounded-full text-indigo-600 dark:text-indigo-400">
             <svg
@@ -219,6 +138,24 @@ const CourseDetails: React.FC = () => {
   return (
     <MainLayout title={course.title}>
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* Generation status banner */}
+        {course.status === "GENERATING" || course.status === "PENDING" ? (
+          <div className="flex items-center gap-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3">
+            <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+            <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+              This course is still being generated — lessons will appear as
+              they're ready.
+            </p>
+          </div>
+        ) : course.status === "FAILED" ? (
+          <div className="flex items-center gap-3 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <p className="text-sm text-red-700 dark:text-red-300">
+              Generation of this course failed. Ask your mentor to try again.
+            </p>
+          </div>
+        ) : null}
+
         {/* Header */}
         <div className="bg-white dark:bg-[#161b22] rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -234,37 +171,33 @@ const CourseDetails: React.FC = () => {
                 <span className="text-gray-500 dark:text-gray-400 text-sm">
                   {course.meta.lessonCount} Lessons
                 </span>
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Generated for you
+                </span>
               </div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 {course.title}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 max-w-2xl">{course.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
+                {course.description}
+              </p>
             </div>
             <div className="mt-4 md:mt-0 text-right">
-              {isEnrolled ? (
-                <>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Your Progress</div>
-                    <div className="flex items-center space-x-3">
-                        <div className="w-32 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-indigo-600 rounded-full transition-all duration-500"
-                            style={{ width: `${syllabus.userProgress.percent}%` }}
-                        />
-                        </div>
-                        <span className="font-bold text-gray-900 dark:text-gray-100">
-                        {syllabus.userProgress.percent}%
-                        </span>
-                    </div>
-                </>
-              ) : (
-                  <Button
-                    onClick={handleEnroll}
-                    disabled={isEnrolling}
-                    className="w-full md:w-auto"
-                  >
-                      {isEnrolling ? "Enrolling..." : "Enroll Now"}
-                  </Button>
-              )}
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                Your Progress
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-32 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                    style={{ width: `${syllabus.userProgress.percent}%` }}
+                  />
+                </div>
+                <span className="font-bold text-gray-900 dark:text-gray-100">
+                  {syllabus.userProgress.percent}%
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -278,23 +211,24 @@ const CourseDetails: React.FC = () => {
             {syllabus.lessons.map((lesson) => (
               <Card
                 key={lesson.id}
-                className={`transition-all ${lesson.status !== "LOCKED" ? "hover:border-indigo-300 cursor-pointer" : "opacity-75 bg-gray-50 dark:bg-[#0d1117]"}`}
+                className={`transition-all ${
+                  lesson.status !== "LOCKED"
+                    ? "hover:border-indigo-300 cursor-pointer"
+                    : "opacity-75 bg-gray-50 dark:bg-[#0d1117]"
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     {getStatusIcon(lesson.status)}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        {lesson.orderIndex}. {lesson.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
-                        {lesson.type.toLowerCase()}
-                      </p>
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {lesson.orderIndex}. {lesson.title}
+                    </h3>
                   </div>
                   <div>
-                    {lesson.status !== "LOCKED" && isEnrolled ? (
-                      <Link to={`/lessons/${lesson.id}`}>
+                    {lesson.status !== "LOCKED" ? (
+                      <Link
+                        to={buildRoute(ROUTES.LESSON, { lessonId: lesson.id })}
+                      >
                         <Button
                           variant={
                             lesson.status === "COMPLETED"
@@ -308,7 +242,7 @@ const CourseDetails: React.FC = () => {
                       </Link>
                     ) : (
                       <Button variant="ghost" size="sm" disabled>
-                        {!isEnrolled ? "Enroll to Start" : "Locked"}
+                        Locked
                       </Button>
                     )}
                   </div>
@@ -317,137 +251,43 @@ const CourseDetails: React.FC = () => {
             ))}
           </div>
         </div>
-
-        {/* Generated Lessons List */}
-        {generatedLessons.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                AI-Generated Lessons
-              </h2>
-            </div>
-            <div className="space-y-4">
-              {generatedLessons.map((lesson) => (
-                <Card
-                  key={lesson.id}
-                  className="hover:border-amber-300 dark:hover:border-amber-700 transition-all border-amber-100 dark:border-amber-900/30"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full text-amber-600 dark:text-amber-400">
-                        <BookOpen className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                          {lesson.title}
-                        </h3>
-                        <p className="text-sm text-amber-600 dark:text-amber-400">
-                          AI Generated
-                        </p>
-                      </div>
-                    </div>
-                    <Link to={`/generated-lessons/${lesson.id}`}>
-                      <Button variant="primary" size="sm">
-                        View
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Generate More Lessons Section */}
-        {isEnrolled && (
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 rounded-2xl p-8 border border-amber-200 dark:border-amber-800/30">
-            <div className="text-center mb-5">
-              <Sparkles className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                Generate a Lesson
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Tell us what you want to learn next and we'll create a personalized lesson with challenges.
-              </p>
-            </div>
-            <div className="max-w-lg mx-auto space-y-3">
-              <textarea
-                value={generatePrompt}
-                onChange={(e) => setGeneratePrompt(e.target.value)}
-                placeholder="e.g., I want to learn about error handling patterns, or teach me recursion with trees, or go deeper into async/await..."
-                className="w-full h-24 px-4 py-3 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-white dark:bg-[#0d1117] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition-all text-sm"
-                disabled={isGenerating}
-              />
-              <div className="flex justify-center">
-                <Button
-                  onClick={handleGenerateLesson}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Generate Lesson
-                    </span>
-                  )}
-                </Button>
-              </div>
-              {isGenerating && (
-                <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-                  This may take a moment. We're creating content tailored to your request.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Floating Course Mentor Chat */}
-      {isEnrolled && (
-        <>
-          {/* Chat drawer */}
-          {showChat && (
-            <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[400px] h-[500px] sm:h-[550px] sm:bottom-6 sm:right-6 bg-white dark:bg-[#161b22] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600">
-                <div className="flex items-center gap-2 text-white">
-                  <MessageCircle className="w-4 h-4" />
-                  <span className="text-sm font-semibold">Course Mentor</span>
-                </div>
-                <button
-                  onClick={() => setShowChat(false)}
-                  className="p-1 rounded hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex-1 min-h-0">
-                <ChatWidget
-                  scope="COURSE"
-                  scopeId={courseId}
-                  placeholder="Ask about this course..."
-                  welcomeTitle="Course Mentor"
-                  welcomeSubtitle={`I can help you navigate "${course?.title}"`}
-                />
-              </div>
+      {showChat && (
+        <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[400px] h-[500px] sm:h-[550px] sm:bottom-6 sm:right-6 bg-white dark:bg-[#161b22] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600">
+            <div className="flex items-center gap-2 text-white">
+              <MessageCircle className="w-4 h-4" />
+              <span className="text-sm font-semibold">Course Mentor</span>
             </div>
-          )}
-
-          {/* Floating toggle button */}
-          {!showChat && (
             <button
-              onClick={() => setShowChat(true)}
-              className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
+              onClick={() => setShowChat(false)}
+              className="p-1 rounded hover:bg-white/20 text-white/80 hover:text-white transition-colors"
             >
-              <MessageCircle className="w-5 h-5" />
-              Course Mentor
+              <X className="w-4 h-4" />
             </button>
-          )}
-        </>
+          </div>
+          <div className="flex-1 min-h-0">
+            <ChatWidget
+              scope="COURSE"
+              scopeId={courseId}
+              placeholder="Ask about this course..."
+              welcomeTitle="Course Mentor"
+              welcomeSubtitle={`I can help you navigate "${course?.title}"`}
+            />
+          </div>
+        </div>
+      )}
+
+      {!showChat && (
+        <button
+          onClick={() => setShowChat(true)}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
+        >
+          <MessageCircle className="w-5 h-5" />
+          Course Mentor
+        </button>
       )}
     </MainLayout>
   );

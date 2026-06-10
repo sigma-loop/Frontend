@@ -9,7 +9,7 @@ export interface JSendResponse<T> {
 export interface User {
   id: string;
   email: string;
-  role: "STUDENT" | "INSTRUCTOR" | "ADMIN";
+  role: "STUDENT" | "ADMIN";
   profileData?: {
     name: string;
   };
@@ -25,56 +25,89 @@ export interface AuthResponse {
   user: User;
 }
 
+// ──────────────────────────────────────────
+// Curriculum pipeline
+// ──────────────────────────────────────────
+
+export type GenerationStatus = "PENDING" | "GENERATING" | "READY" | "FAILED";
+
+export interface CurriculumJob {
+  id: string;
+  prompt: string;
+  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | null;
+  status: GenerationStatus;
+  courseId: string | null;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ──────────────────────────────────────────
+// Courses & Lessons — per-user, AI-generated
+// ──────────────────────────────────────────
+
 export interface Course {
   id: string;
   title: string;
   description: string;
   difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
   tags: string[];
-  isPublished?: boolean;
+  status: GenerationStatus;
+  createdAt: string;
   meta: {
     lessonCount: number;
     durationHours: number;
   };
 }
 
-export interface Enrollment {
-  courseId: string;
-  title: string;
-  totalLessons: number;
-  completedLessons: number;
-  lastAccessedAt: string;
-}
-
 export interface Lesson {
   id: string;
   title: string;
-  orderIndex?: number; // Optional in Get Lesson Details
-  type: "LESSON" | "CHALLENGE" | "PROJECT" | "QUIZ"; // Added other types just in case
-  status?: "LOCKED" | "IN_PROGRESS" | "COMPLETED";
+  orderIndex?: number;
   contentMarkdown?: string;
   courseId?: string;
-  challenges?: Challenge[]; // API returns an array
-  nextLessonId?: string;
-  prevLessonId?: string;
+  challenges?: Challenge[];
+  nextLessonId?: string | null;
+  prevLessonId?: string | null;
 }
 
-export interface Challenge {
+// ──────────────────────────────────────────
+// Challenges — discriminated by kind
+// ──────────────────────────────────────────
+
+export type ChallengeKind = "PROGRAMMING" | "MATH";
+
+export interface TestCase {
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
+}
+
+interface ChallengeBase {
   id: string;
   lessonId?: string;
   title: string;
-  description?: string;
+  kind: ChallengeKind;
+}
+
+export interface ProgrammingChallenge extends ChallengeBase {
+  kind: "PROGRAMMING";
+  description: string;
   starterCodes: Record<string, string>;
-  solutionCodes?: Record<string, string>;
-  injectedCodes?: Record<string, string>;
   testCases?: TestCase[];
 }
 
-export interface TestCase {
-  input: any;
-  expectedOutput: any;
-  isHidden: boolean;
+export interface MathChallenge extends ChallengeBase {
+  kind: "MATH";
+  problemLatex: string;
+  mathRunLimit: number;
 }
+
+export type Challenge = ProgrammingChallenge | MathChallenge;
+
+// ──────────────────────────────────────────
+// Execution (PROGRAMMING / Judge0)
+// ──────────────────────────────────────────
 
 export interface TestResult {
   index: number;
@@ -90,7 +123,7 @@ export interface TestResult {
 }
 
 export interface ExecutionResult {
-  status: "PASS" | "FAIL" | "ERROR" | "PASSED" | "FAILED";
+  status: "PASSED" | "FAILED" | "ERROR";
   stdout?: string;
   stderr?: string;
   testResults?: TestResult[];
@@ -107,6 +140,37 @@ export interface SubmissionResult extends ExecutionResult {
   lessonCompleted?: boolean;
 }
 
+// ──────────────────────────────────────────
+// Math grading (LLM verdict)
+// ──────────────────────────────────────────
+
+export interface MathVerdict {
+  correct: boolean;
+  equivalentForm: boolean;
+  rationale: string;
+  confidence: number;
+}
+
+export type MathSubmissionStatus = "PASSED" | "FAILED" | "PENDING_REVIEW";
+
+export interface MathExecutionResult {
+  submissionId: string;
+  verdict: MathVerdict;
+  status: MathSubmissionStatus;
+  remainingRuns?: number;
+  lessonCompleted?: boolean;
+}
+
+export interface MathRunStatus {
+  limit: number;
+  used: number;
+  remaining: number;
+}
+
+// ──────────────────────────────────────────
+// Dashboard
+// ──────────────────────────────────────────
+
 export interface DashboardResponse {
   user: {
     name: string;
@@ -118,6 +182,7 @@ export interface DashboardResponse {
     lessonsCompleted: number;
   };
   quickResume: {
+    courseId: string;
     courseTitle: string;
     lessonId: string;
     lessonTitle: string;
@@ -147,48 +212,11 @@ export interface ChatMessage {
 export interface SendMessageResponse {
   userMessage: ChatMessage;
   assistantMessage: ChatMessage;
-}
-
-// ──────────────────────────────────────────
-// AI Generated Content
-// ──────────────────────────────────────────
-
-export interface GeneratedCourse {
-  id: string;
-  title: string;
-  description: string;
-  difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
-  tags: string[];
-  lessonCount?: number;
-  lessons?: GeneratedLessonSummary[];
-  generatedAt: string;
-}
-
-export interface GeneratedLessonSummary {
-  id: string;
-  title: string;
-  orderIndex: number;
-  challengeCount?: number;
-  generatedAt?: string;
-}
-
-export interface GeneratedLesson {
-  id: string;
-  courseId: string;
-  isGeneratedCourse?: boolean;
-  title: string;
-  contentMarkdown: string;
-  orderIndex: number;
-  challenges: GeneratedChallenge[];
-  generatedAt: string;
-}
-
-export interface GeneratedChallenge {
-  id: string;
-  title: string;
-  starterCodes: Record<string, string>;
-  solutionCodes: Record<string, string>;
-  testCases: TestCase[];
+  curriculumJob: {
+    id: string;
+    status: GenerationStatus;
+    prompt: string;
+  } | null;
 }
 
 // ──────────────────────────────────────────
@@ -200,6 +228,7 @@ export interface SyllabusResponse {
     id: string;
     title: string;
     description: string;
+    status: GenerationStatus;
   };
   userProgress: {
     percent: number;
@@ -208,7 +237,6 @@ export interface SyllabusResponse {
     id: string;
     orderIndex: number;
     title: string;
-    type: "LESSON" | "CHALLENGE";
-    status: "LOCKED" | "IN_PROGRESS" | "COMPLETED";
+    status: "LOCKED" | "UNLOCKED" | "IN_PROGRESS" | "COMPLETED";
   }[];
 }

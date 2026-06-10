@@ -4,14 +4,13 @@ import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
-import { adminService } from "../../../services/adminService";
-// User type available from "../../../types/api" if needed
+import { adminService, type AdminUser } from "../../../services/adminService";
 
 const AdminUsers: React.FC = () => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -30,19 +29,24 @@ const AdminUsers: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.profileData?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.profileData?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDelete = async (userId: string) => {
-    if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this user? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
     try {
       await adminService.deleteUser(userId);
-      setUsers(users.filter(u => (u._id || u.id) !== userId));
+      setUsers(users.filter((u) => (u._id || u.id) !== userId));
     } catch (error) {
       console.error("Failed to delete user:", error);
       alert("Failed to delete user");
@@ -56,13 +60,17 @@ const AdminUsers: React.FC = () => {
     try {
       await adminService.updateUser(editingUser._id || editingUser.id, {
         role: editingUser.role,
-        profileData: { name: editingUser.profileData?.name || "" }
+        profileData: { name: editingUser.profileData?.name || "" },
       });
 
       // Update local state
-      setUsers(users.map(u =>
-        (u._id || u.id) === (editingUser._id || editingUser.id) ? editingUser : u
-      ));
+      setUsers(
+        users.map((u) =>
+          (u._id || u.id) === (editingUser._id || editingUser.id)
+            ? editingUser
+            : u
+        )
+      );
       setEditingUser(null);
     } catch (error) {
       console.error("Failed to update user:", error);
@@ -84,19 +92,23 @@ const AdminUsers: React.FC = () => {
     <AdminLayout title="Users">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Users</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Manage platform users and roles</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Users
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Manage platform users and roles
+          </p>
         </div>
 
         {/* Search Bar */}
         <Card>
           <div className="flex gap-4">
-              <Input
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-md"
-              />
+            <Input
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-md"
+            />
           </div>
         </Card>
 
@@ -108,7 +120,7 @@ const AdminUsers: React.FC = () => {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {filteredUsers.map((user: any) => (
+            {filteredUsers.map((user) => (
               <Card key={user._id || user.id}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -117,16 +129,14 @@ const AdminUsers: React.FC = () => {
                         {user.profileData?.name || "Unknown User"}
                       </h3>
                       <Badge
-                        variant={
-                          user.role === "ADMIN" ? "error" :
-                          user.role === "INSTRUCTOR" ? "warning" :
-                          "default"
-                        }
+                        variant={user.role === "ADMIN" ? "error" : "default"}
                       >
                         {user.role}
                       </Badge>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400">{user.email}</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {user.email}
+                    </p>
                     {user.stats && (
                       <div className="mt-2 flex gap-4 text-sm text-gray-500 dark:text-gray-400">
                         <span>XP: {user.stats.totalXp}</span>
@@ -137,19 +147,19 @@ const AdminUsers: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingUser(user)}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingUser(user)}
                     >
-                        Edit
+                      Edit
                     </Button>
                     <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        onClick={() => handleDelete(user._id || user.id)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      onClick={() => handleDelete(user._id || user.id)}
                     >
-                        Delete
+                      Delete
                     </Button>
                   </div>
                 </div>
@@ -162,37 +172,54 @@ const AdminUsers: React.FC = () => {
         {editingUser && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-[#161b22] rounded-lg max-w-md w-full p-6">
-              <h2 className="text-xl font-bold mb-4 dark:text-gray-100">Edit User</h2>
+              <h2 className="text-xl font-bold mb-4 dark:text-gray-100">
+                Edit User
+              </h2>
               <form onSubmit={handleUpdateUser} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Name
+                  </label>
                   <Input
                     value={editingUser.profileData?.name || ""}
-                    onChange={(e) => setEditingUser({
+                    onChange={(e) =>
+                      setEditingUser({
                         ...editingUser,
-                        profileData: { ...editingUser.profileData, name: e.target.value }
-                    })}
+                        profileData: {
+                          ...editingUser.profileData,
+                          name: e.target.value,
+                        },
+                      })
+                    }
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Role
+                  </label>
                   <select
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-800/50 dark:text-gray-100"
                     value={editingUser.role}
-                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                    onChange={(e) =>
+                      setEditingUser({
+                        ...editingUser,
+                        role: e.target.value as "STUDENT" | "ADMIN",
+                      })
+                    }
                   >
                     <option value="STUDENT">Student</option>
-                    <option value="INSTRUCTOR">Instructor</option>
                     <option value="ADMIN">Admin</option>
                   </select>
                 </div>
                 <div className="flex gap-3 justify-end mt-6">
-                  <Button type="button" variant="ghost" onClick={() => setEditingUser(null)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setEditingUser(null)}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit">
-                    Save Changes
-                  </Button>
+                  <Button type="submit">Save Changes</Button>
                 </div>
               </form>
             </div>

@@ -7,22 +7,16 @@ import {
 } from "../types/api";
 
 export interface CodeExecutionPayload {
-  challengeId?: string;
-  code: string;
-  language: string;
-  generated?: boolean;
-}
-
-export interface SubmissionPayload {
   challengeId: string;
   code: string;
   language: string;
-  generated?: boolean;
 }
 
 export const lessonService = {
   getLesson: async (lessonId: string): Promise<Lesson> => {
-    const response = await api.get<JSendResponse<Lesson>>(`/lessons/${lessonId}`);
+    const response = await api.get<JSendResponse<Lesson>>(
+      `/lessons/${lessonId}`
+    );
     if (!response.data.data) {
       throw new Error("Lesson not found");
     }
@@ -36,18 +30,22 @@ export const lessonService = {
     return response.data.data || [];
   },
 
+  // ── PROGRAMMING challenges (Judge0) ──
+
   runCode: async (payload: CodeExecutionPayload): Promise<ExecutionResult> => {
     const response = await api.post<JSendResponse<ExecutionResult>>(
       "/execution/run",
       payload
     );
     if (!response.data.data) {
-        throw new Error("No execution result returned");
+      throw new Error("No execution result returned");
     }
     return response.data.data;
   },
 
-  submitCode: async (payload: SubmissionPayload): Promise<SubmissionResult> => {
+  submitCode: async (
+    payload: CodeExecutionPayload
+  ): Promise<SubmissionResult> => {
     const response = await api.post<JSendResponse<SubmissionResult>>(
       "/execution/submit",
       payload

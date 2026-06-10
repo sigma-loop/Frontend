@@ -1,7 +1,7 @@
 import React from "react";
 import Navbar from "../../components/common/Navbar";
 import PageMeta from "../../components/common/PageMeta";
-import ChatWidget from "../../components/common/ChatWidget";
+import ChatWidget from "../../components/chat/ChatWidget";
 
 const Mentor: React.FC = () => {
   return (
@@ -14,9 +14,9 @@ const Mentor: React.FC = () => {
           <ChatWidget
             scope="GENERAL"
             showSidebar={true}
-            placeholder="Message SigmaLoop..."
-            welcomeTitle="How can I help you today?"
-            welcomeSubtitle="Ask me anything about programming, algorithms, or your coursework."
+            placeholder="Message your mentor..."
+            welcomeTitle="What do you want to learn?"
+            welcomeSubtitle="Ask me anything about programming or math — or tell me what you want to master and I'll build you a personalized course."
           />
         </div>
       </div>

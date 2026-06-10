@@ -31,12 +31,15 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === "dark" }}>
+    <ThemeContext.Provider
+      value={{ theme, toggleTheme, isDark: theme === "dark" }}
+    >
       {children}
     </ThemeContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
   if (context === undefined) {

@@ -13,8 +13,6 @@
  * cn("px-4 py-2", isActive && "bg-indigo-600", className)
  * // → "px-4 py-2 bg-indigo-600 custom-class"
  */
-export function cn(
-  ...inputs: (string | boolean | undefined | null)[]
-): string {
+export function cn(...inputs: (string | boolean | undefined | null)[]): string {
   return inputs.filter(Boolean).join(" ");
 }

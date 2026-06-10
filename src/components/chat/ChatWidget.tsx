@@ -6,7 +6,11 @@ import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import "katex/dist/katex.min.css";
 import "highlight.js/styles/github-dark-dimmed.min.css";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, X, CheckCircle2, AlertTriangle } from "lucide-react";
 import { chatService } from "../../services/chatService";
+import { useCurriculumJob } from "../../hooks/useCurriculumJob";
+import { buildRoute, ROUTES } from "../../constants/routes";
 import type { ChatThread, ChatMessage } from "../../types/api";
 
 // ──────────────────────────────────────────
@@ -124,8 +128,14 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const navigate = useNavigate();
+
+  // Polls the curriculum job enqueued from this chat until READY/FAILED.
+  const { job: curriculumJob, isGenerating: isJobGenerating } =
+    useCurriculumJob(activeJobId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -189,10 +199,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     setInputValue("");
   };
 
-  const handleDeleteThread = async (
-    e: React.MouseEvent,
-    threadId: string
-  ) => {
+  const handleDeleteThread = async (e: React.MouseEvent, threadId: string) => {
     e.stopPropagation();
     try {
       await chatService.deleteThread(threadId);
@@ -238,8 +245,11 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
       };
       setMessages((prev) => [...prev, optimisticUserMsg]);
 
-      const { userMessage, assistantMessage } =
-        await chatService.sendMessage(threadId, messageContent);
+      const {
+        userMessage,
+        assistantMessage,
+        curriculumJob: newJob,
+      } = await chatService.sendMessage(threadId, messageContent);
 
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== optimisticUserMsg.id),
@@ -247,11 +257,14 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         assistantMessage,
       ]);
 
+      // The mentor decided to generate a curriculum — start polling the job.
+      if (newJob) {
+        setActiveJobId(newJob.id);
+      }
+
       setThreads((prev) =>
         prev.map((t) =>
-          t.id === threadId
-            ? { ...t, updatedAt: new Date().toISOString() }
-            : t
+          t.id === threadId ? { ...t, updatedAt: new Date().toISOString() } : t
         )
       );
     } catch (err) {
@@ -269,8 +282,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   };
 
-  const isNewEmptyChat =
-    currentChatId === NEW_CHAT_ID && messages.length === 0;
+  const isNewEmptyChat = currentChatId === NEW_CHAT_ID && messages.length === 0;
 
   // ── Sidebar content (shared between mobile drawer & desktop static) ──
   const sidebarContent = (
@@ -300,8 +312,18 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
           onClick={() => setSidebarOpen(false)}
           className="hidden md:flex p-2 rounded-lg hover:bg-gray-200/70 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+            />
           </svg>
         </button>
       </div>
@@ -387,9 +409,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
 
           {/* Desktop static sidebar */}
           {sidebarOpen && (
-            <aside
-              className="hidden md:flex w-64 flex-shrink-0 flex-col bg-gray-50 dark:bg-[#0d1117] border-r border-gray-200 dark:border-gray-800"
-            >
+            <aside className="hidden md:flex w-64 flex-shrink-0 flex-col bg-gray-50 dark:bg-[#0d1117] border-r border-gray-200 dark:border-gray-800">
               {sidebarContent}
             </aside>
           )}
@@ -424,8 +444,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
               {currentChatId === NEW_CHAT_ID
                 ? "New chat"
-                : threads.find((t) => t.id === currentChatId)?.title ||
-                  "Chat"}
+                : threads.find((t) => t.id === currentChatId)?.title || "Chat"}
             </span>
           </div>
         )}
@@ -579,6 +598,72 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             </div>
           )}
         </div>
+
+        {/* Curriculum generation status banner */}
+        {activeJobId && (
+          <div className="px-4 flex-shrink-0">
+            <div className="max-w-2xl mx-auto">
+              {isJobGenerating ? (
+                <div className="flex items-center gap-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3">
+                  <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                      Generating your personalized course…
+                    </p>
+                    <p className="text-xs text-indigo-500/80 dark:text-indigo-400/80 truncate">
+                      You can keep chatting — we'll let you know when it's
+                      ready.
+                    </p>
+                  </div>
+                  <span className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
+                </div>
+              ) : curriculumJob?.status === "READY" ? (
+                <div className="flex items-center gap-3 rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 px-4 py-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <p className="flex-1 text-sm font-medium text-green-700 dark:text-green-300">
+                    Your personalized course is ready!
+                  </p>
+                  <button
+                    onClick={() =>
+                      curriculumJob.courseId &&
+                      navigate(
+                        buildRoute(ROUTES.COURSE_DETAILS, {
+                          courseId: curriculumJob.courseId,
+                        })
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors flex-shrink-0"
+                  >
+                    Open course
+                  </button>
+                  <button
+                    onClick={() => setActiveJobId(null)}
+                    className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-500/20 text-green-600 dark:text-green-400 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
+                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <p className="flex-1 text-sm text-red-700 dark:text-red-300">
+                    Course generation failed
+                    {curriculumJob?.error
+                      ? `: ${curriculumJob.error}`
+                      : "."}{" "}
+                    Ask the mentor to try again.
+                  </p>
+                  <button
+                    onClick={() => setActiveJobId(null)}
+                    className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Input area */}
         <div className="px-4 py-4 flex-shrink-0">

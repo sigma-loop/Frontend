@@ -9,19 +9,33 @@ export const API_BASE_URL =
 // Auth
 export const TOKEN_STORAGE_KEY = "token";
 
-// Roles
+// Roles — STUDENT and ADMIN only; there is no INSTRUCTOR role.
 export const ROLES = {
   STUDENT: "STUDENT",
-  INSTRUCTOR: "INSTRUCTOR",
   ADMIN: "ADMIN",
 } as const;
 
 export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 
-export const CONTENT_MANAGER_ROLES: UserRole[] = [
-  ROLES.ADMIN,
-  ROLES.INSTRUCTOR,
-];
+// Challenge kinds
+export const CHALLENGE_KINDS = {
+  PROGRAMMING: "PROGRAMMING",
+  MATH: "MATH",
+} as const;
+
+export type ChallengeKindConst =
+  (typeof CHALLENGE_KINDS)[keyof typeof CHALLENGE_KINDS];
+
+// Generation statuses (courses + curriculum jobs)
+export const GENERATION_STATUSES = {
+  PENDING: "PENDING",
+  GENERATING: "GENERATING",
+  READY: "READY",
+  FAILED: "FAILED",
+} as const;
+
+// Math verdicts below this confidence show as "Pending review"
+export const MATH_CONFIDENCE_THRESHOLD = 0.7;
 
 // Difficulty levels
 export const DIFFICULTIES = {
@@ -30,8 +44,7 @@ export const DIFFICULTIES = {
   ADVANCED: "ADVANCED",
 } as const;
 
-export type Difficulty =
-  (typeof DIFFICULTIES)[keyof typeof DIFFICULTIES];
+export type Difficulty = (typeof DIFFICULTIES)[keyof typeof DIFFICULTIES];
 
 // Supported programming languages
 export const SUPPORTED_LANGUAGES = [
@@ -67,24 +80,18 @@ export const LANGUAGE_MONACO_IDS: Record<SupportedLanguage, string> = {
   rust: "rust",
 };
 
-// Lesson types
-export const LESSON_TYPES = {
-  LESSON: "LESSON",
-  CHALLENGE: "CHALLENGE",
-} as const;
-
 // Lesson statuses
 export const LESSON_STATUSES = {
   LOCKED: "LOCKED",
+  UNLOCKED: "UNLOCKED",
   IN_PROGRESS: "IN_PROGRESS",
   COMPLETED: "COMPLETED",
 } as const;
 
 // Execution statuses
 export const EXECUTION_STATUSES = {
-  PASS: "PASS",
-  FAIL: "FAIL",
-  ERROR: "ERROR",
   PASSED: "PASSED",
   FAILED: "FAILED",
+  ERROR: "ERROR",
+  PENDING_REVIEW: "PENDING_REVIEW",
 } as const;

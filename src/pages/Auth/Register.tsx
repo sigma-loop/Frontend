@@ -45,8 +45,8 @@ const Register: React.FC = () => {
         login(token, user);
         navigate("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to register");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to register");
     } finally {
       setIsLoading(false);
     }
