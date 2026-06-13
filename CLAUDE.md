@@ -242,7 +242,7 @@ The codebase still contains pages and components from the previous "browse-the-c
 |---|---|
 | `pages/Course/CourseList.tsx` (public catalog) | `pages/MyCourses/MyCourses.tsx` (per-user) |
 | `pages/Curriculum/Curriculum.tsx` (hardcoded) | Removed — the mentor *generates* the curriculum |
-| `pages/Mentor/Mentor.tsx` (mock-data chat) | Real Gemini-backed chat + curriculum-request CTA |
+| `pages/Mentor/Mentor.tsx` (mock-data chat) | Real AI-backed chat + curriculum-request CTA |
 | Admin: course/lesson/challenge CRUD | Admin: users, curriculum jobs, system |
 | Generic `ProtectedRoute` | Role-aware guards (STUDENT vs ADMIN) |
 | INSTRUCTOR role in `constants` | Removed — STUDENT and ADMIN only |
