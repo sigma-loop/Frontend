@@ -21,6 +21,7 @@ export type UserRole = (typeof ROLES)[keyof typeof ROLES];
 export const CHALLENGE_KINDS = {
   PROGRAMMING: "PROGRAMMING",
   MATH: "MATH",
+  MCQ: "MCQ",
 } as const;
 
 export type ChallengeKindConst =

@@ -16,13 +16,17 @@ import {
 
 interface MathWorkspaceProps {
   challenge: MathChallenge;
+  onCompleted?: () => void;
 }
 
 /**
  * Workspace for MATH challenges: LaTeX input with live KaTeX preview,
  * graded by the LLM. Low-confidence verdicts surface as "Pending review".
  */
-const MathWorkspace: React.FC<MathWorkspaceProps> = ({ challenge }) => {
+const MathWorkspace: React.FC<MathWorkspaceProps> = ({
+  challenge,
+  onCompleted,
+}) => {
   const challengeId = challenge.id;
   const storageKey = `sigmaloop_math_${challengeId}`;
 
@@ -97,6 +101,9 @@ const MathWorkspace: React.FC<MathWorkspaceProps> = ({ challenge }) => {
       setResult(res);
       if (res.lessonCompleted) {
         setLessonCompleted(true);
+      }
+      if (res.status === "PASSED") {
+        onCompleted?.();
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to submit answer");

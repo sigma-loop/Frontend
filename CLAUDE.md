@@ -36,11 +36,12 @@ src/
 │   │   ├── EmptyState.tsx
 │   │   └── NotFound.tsx
 │   ├── ui/                  # Button, Card, Badge, Input
-│   ├── chat/                # Mentor chat widget + message list + curriculum-request CTA
-│   ├── challenge/           # ProgrammingChallenge.tsx, MathChallenge.tsx — kind-branched renderers
+│   ├── chat/                # Mentor chat widget — messages, curriculum banner, autonomous mentor-action list
 │   └── layouts/             # MainLayout, AuthLayout, LessonLayout, AdminLayout
+│   # (kind-branched challenge workspaces live in pages/Lesson/components/, not here)
 ├── constants/
 │   ├── index.ts             # App-wide constants (API_BASE_URL, ROLES, LANGUAGES, CHALLENGE_KINDS, STATUSES)
+│   ├── topicLibrary.ts      # Static topic library for the onboarding questionnaire
 │   └── routes.ts            # Route path constants + buildRoute() helper
 ├── contexts/
 │   └── AuthContext.tsx
@@ -55,24 +56,30 @@ src/
 ├── pages/
 │   ├── Home/Home.tsx              # Landing — pitches the AI tutor, CTA to /mentor
 │   ├── Auth/Login.tsx, Register.tsx
-│   ├── Mentor/Mentor.tsx          # Primary entry point — chat + curriculum requests
-│   ├── MyCourses/MyCourses.tsx    # The current user's personalized courses
-│   ├── Course/CourseDetails.tsx   # Read-only view of a generated course
+│   ├── Onboarding/Onboarding.tsx  # Guided questionnaire wizard (topics → AI follow-ups → review → generating)
+│   ├── Mentor/Mentor.tsx          # Entry point — chat + autonomous mentor actions
+│   ├── MyCourses/MyCourses.tsx    # The current user's personalized courses ("Learn something" → /onboarding)
+│   ├── Course/CourseDetails.tsx   # Generated course view + "Generate more lessons"
 │   ├── Lesson/
-│   │   ├── LessonView.tsx                # Branches on challenge.kind
+│   │   ├── LessonView.tsx                # Multi-challenge: ChallengeTabs + per-challenge completion
 │   │   └── components/
+│   │       ├── ChallengeWorkspace.tsx    # Dispatches on challenge.kind
 │   │       ├── ProgrammingWorkspace.tsx  # Monaco + OutputPanel
 │   │       ├── MathWorkspace.tsx         # LaTeX textarea + KaTeX preview + verdict panel
+│   │       ├── MCQWorkspace.tsx          # Single/multi-select quiz + verdict panel
+│   │       ├── ChallengeTabs.tsx         # Selector when a lesson has >1 challenge
 │   │       └── LessonContent.tsx
 │   └── Admin/                     # Admin panel (Users, Curriculum Jobs, System)
 ├── services/
 │   ├── api.ts                # Axios instance + interceptors
 │   ├── authService.ts
-│   ├── chatService.ts        # Mentor chat — send/receive messages
+│   ├── chatService.ts        # Mentor chat — send/receive messages (+ actions[])
 │   ├── curriculumService.ts  # Request generation, poll job status
-│   ├── courseService.ts      # List/get the user's courses (read-only)
+│   ├── questionnaireService.ts # Onboarding: getFollowUps + submit(goals)
+│   ├── courseService.ts      # List/get the user's courses (read-only) + generateMore
 │   ├── lessonService.ts      # Read lessons, run + submit programming code
 │   ├── mathService.ts        # Submit LaTeX answers
+│   ├── mcqService.ts         # Submit MCQ answers
 │   └── adminService.ts
 ├── types/api.ts              # TypeScript interfaces for API responses
 ├── assets/
@@ -96,10 +103,11 @@ import { ROUTES, buildRoute } from '../constants/routes';
 | `/` | Home | Public | MainLayout | Landing; CTA → `/mentor` |
 | `/login` | Login | Public only | AuthLayout | |
 | `/register` | Register | Public only | AuthLayout | |
-| `/mentor` | Mentor | Protected | MainLayout | **Primary entry point** — chat + curriculum requests |
-| `/my-courses` | MyCourses | Protected | MainLayout | Lists the current user's personalized courses |
-| `/courses/:courseId` | CourseDetails | Protected | MainLayout | Read-only; ownership-checked server-side |
-| `/lessons/:lessonId` | LessonView | Protected | LessonLayout | Branches on `challenge.kind` |
+| `/onboarding` | Onboarding | Protected | full-screen | Guided questionnaire → `create_course` job |
+| `/mentor` | Mentor | Protected | MainLayout | Chat entry point — autonomous, tool-using mentor |
+| `/my-courses` | MyCourses | Protected | MainLayout | Lists the current user's courses; "Learn something" → `/onboarding` |
+| `/courses/:courseId` | CourseDetails | Protected | MainLayout | Generated course + "Generate more lessons"; ownership-checked server-side |
+| `/lessons/:lessonId` | LessonView | Protected | LessonLayout | Branches on `challenge.kind`; multi-challenge via `ChallengeTabs` |
 | `/admin/*` | Admin pages | Protected (ADMIN) | AdminLayout | Users, jobs, system |
 
 There is **no** `/courses` public catalog and **no** instructor-authoring pages. All content is per-user generated.
@@ -107,7 +115,7 @@ There is **no** `/courses` public catalog and **no** instructor-authoring pages.
 ## Patterns & Conventions
 
 ### Branching on Challenge Kind
-Every place that renders or submits a challenge must branch on `kind`:
+Every place that renders or submits a challenge must branch on `kind` (`ChallengeWorkspace.tsx` is the dispatcher). A lesson can hold several challenges of mixed kinds; `LessonView` renders a `ChallengeTabs` selector and marks the lesson complete only when all pass.
 
 ```tsx
 import { CHALLENGE_KINDS } from '../constants';
@@ -118,15 +126,19 @@ if (challenge.kind === CHALLENGE_KINDS.PROGRAMMING) {
 if (challenge.kind === CHALLENGE_KINDS.MATH) {
   return <MathWorkspace challenge={challenge} />;
 }
+if (challenge.kind === CHALLENGE_KINDS.MCQ) {
+  return <MCQWorkspace challenge={challenge} />;   // submits via mcqService → /mcq/submit
+}
 ```
 
-### Mentor Chat → Curriculum Generation
-The chat is the entry point for new courses. When the mentor decides (or the user asks) to build a curriculum:
+MCQ correctness/explanations are **not** in the challenge payload — they arrive only in the submit verdict, so `MCQWorkspace` reads correctness solely from the response.
 
-1. The chat component calls `curriculumService.request({ threadId, goals })`.
-2. The response is a `jobId` and the chat shows "Generating your curriculum…".
-3. `useCurriculumJob(jobId)` polls until status is `READY` or `FAILED`.
-4. On `READY`, the UI navigates to the new course.
+### New courses — onboarding & the mentor
+There are two entry points into curriculum generation, both ending at a `CurriculumJob` the UI polls:
+- **Onboarding wizard** (`/onboarding`): `questionnaireService.getFollowUps(selections)` → AI follow-ups → `questionnaireService.submit(goals)`.
+- **Mentor chat**: the autonomous mentor calls its `create_course` tool; `sendMessage` returns `actions[]` (+ a `curriculumJob` for the first course). `ChatWidget` renders an action list per assistant message, with a per-row `useCurriculumJob` poller ("Generating…" → "Open course"). Pass `onMentorAction` to refresh a host view (CourseDetails/LessonView re-fetch when the mentor edits their course/lesson).
+
+In all cases: `useCurriculumJob(jobId)` polls until `READY`/`FAILED`, then the UI navigates to / refreshes the course. Never poll inline in a component.
 
 Polling lives in a custom hook; never poll inline in a component.
 
@@ -185,8 +197,8 @@ Use skeleton components for better perceived performance. Curriculum generation 
 
 ### Component Conventions
 - UI primitives live in `src/components/ui/` — reusable, no business logic.
-- `src/components/chat/` and `src/components/challenge/` are the two feature-specific component groups; everything else common lives in `src/components/common/`.
-- Page-specific sub-components live alongside their page (e.g., `pages/Lesson/components/`).
+- `src/components/chat/` is the one feature-specific shared component group; everything else common lives in `src/components/common/`.
+- Page-specific sub-components live alongside their page — the kind-branched challenge workspaces (`ChallengeWorkspace`, `Programming`/`Math`/`MCQWorkspace`, `ChallengeTabs`) live in `pages/Lesson/components/`, not in a top-level `components/challenge/`.
 - Layouts provide page structure (Navbar/Footer, sidebars, etc.).
 
 ### Styling

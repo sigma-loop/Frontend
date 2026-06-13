@@ -10,6 +10,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import Onboarding from "./pages/Onboarding/Onboarding";
 import MyCourses from "./pages/MyCourses/MyCourses";
 import CourseDetails from "./pages/Course/CourseDetails";
 import Home from "./pages/Home/Home";
@@ -67,6 +68,7 @@ function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/mentor" element={<Mentor />} />
               <Route path="/my-courses" element={<MyCourses />} />
               <Route path="/courses/:courseId" element={<CourseDetails />} />

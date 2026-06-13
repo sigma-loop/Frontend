@@ -64,9 +64,12 @@ const Dashboard: React.FC = () => {
               Ready to continue your learning journey?
             </p>
           </div>
-          <div className="mt-4 md:mt-0">
+          <div className="mt-4 md:mt-0 flex gap-2">
+            <Link to="/onboarding">
+              <Button>Start learning</Button>
+            </Link>
             <Link to="/mentor">
-              <Button>Talk to your Mentor</Button>
+              <Button variant="outline">Talk to your Mentor</Button>
             </Link>
           </div>
         </div>
@@ -208,12 +211,17 @@ const Dashboard: React.FC = () => {
                 No courses in progress
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Tell your mentor what you want to learn and it will build a
-                personalized course for you.
+                Answer a few quick questions and we'll build a personalized
+                course just for you.
               </p>
-              <Link to="/mentor">
-                <Button variant="primary">Talk to your Mentor</Button>
-              </Link>
+              <div className="flex justify-center gap-2">
+                <Link to="/onboarding">
+                  <Button variant="primary">Start your first course</Button>
+                </Link>
+                <Link to="/mentor">
+                  <Button variant="outline">Talk to your Mentor</Button>
+                </Link>
+              </div>
             </Card>
           </div>
         )}
@@ -258,9 +266,14 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">
-              You don't have any courses yet — ask your mentor for one.
-            </p>
+            <div className="text-gray-500 dark:text-gray-400">
+              <p className="mb-3">You don't have any courses yet.</p>
+              <Link to="/onboarding">
+                <Button variant="primary" size="sm">
+                  Start learning
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>

@@ -33,13 +33,44 @@ export type GenerationStatus = "PENDING" | "GENERATING" | "READY" | "FAILED";
 
 export interface CurriculumJob {
   id: string;
+  type?: "NEW_COURSE" | "EXTEND_COURSE";
   prompt: string;
   difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | null;
+  targetCourseId?: string | null;
   status: GenerationStatus;
   courseId: string | null;
   error: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// ──────────────────────────────────────────
+// Onboarding questionnaire (hybrid: static library + AI follow-ups)
+// ──────────────────────────────────────────
+
+export type QuestionnaireQuestionType = "single" | "multi" | "text";
+
+export interface QuestionnaireQuestion {
+  id: string;
+  question: string;
+  type: QuestionnaireQuestionType;
+  options?: string[]; // present for single/multi
+}
+
+export interface FollowUpRequest {
+  topics: string[];
+  categories: string[];
+}
+
+export interface FollowUpResponse {
+  questions: QuestionnaireQuestion[];
+}
+
+export interface QuestionnaireGoals {
+  topics: string[];
+  categories: string[];
+  followups: { question: string; answer: string }[];
+  freeText?: string;
 }
 
 // ──────────────────────────────────────────
@@ -75,7 +106,7 @@ export interface Lesson {
 // Challenges — discriminated by kind
 // ──────────────────────────────────────────
 
-export type ChallengeKind = "PROGRAMMING" | "MATH";
+export type ChallengeKind = "PROGRAMMING" | "MATH" | "MCQ";
 
 export interface TestCase {
   input: string;
@@ -88,6 +119,8 @@ interface ChallengeBase {
   lessonId?: string;
   title: string;
   kind: ChallengeKind;
+  // Whether the user has already passed this challenge (from GET /lessons/:id).
+  passed?: boolean;
 }
 
 export interface ProgrammingChallenge extends ChallengeBase {
@@ -103,7 +136,42 @@ export interface MathChallenge extends ChallengeBase {
   mathRunLimit: number;
 }
 
-export type Challenge = ProgrammingChallenge | MathChallenge;
+// MCQ — server-side graded. The correct answers/explanations are NEVER part
+// of the challenge payload; they only arrive in the submit verdict.
+export interface MCQOption {
+  id: string;
+  text: string;
+}
+
+export interface MCQChallenge extends ChallengeBase {
+  kind: "MCQ";
+  prompt: string;
+  options: MCQOption[];
+  allowMultiple: boolean;
+}
+
+export type Challenge = ProgrammingChallenge | MathChallenge | MCQChallenge;
+
+export interface MCQOptionExplanation {
+  optionId: string;
+  correct: boolean;
+  explanation: string;
+}
+
+export interface MCQVerdict {
+  correct: boolean;
+  partial: boolean;
+  correctOptionIds: string[];
+  explanations: MCQOptionExplanation[];
+  rationale: string;
+}
+
+export interface MCQSubmissionResult {
+  submissionId: string;
+  status: "PASSED" | "FAILED";
+  verdict: MCQVerdict;
+  lessonCompleted?: boolean;
+}
 
 // ──────────────────────────────────────────
 // Execution (PROGRAMMING / Judge0)
@@ -209,6 +277,24 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+// An autonomous action the mentor took on the learner's behalf during a turn
+// (course/lesson creation or edit). Surfaced under the assistant message.
+export type MentorActionType =
+  | "CREATE_COURSE"
+  | "GENERATE_MORE_LESSONS"
+  | "CREATE_LESSON"
+  | "EDIT_LESSON"
+  | "UPDATE_COURSE"
+  | "OTHER";
+
+export interface MentorAction {
+  type: MentorActionType;
+  summary: string;
+  courseId?: string | null;
+  lessonId?: string | null;
+  jobId?: string | null;
+}
+
 export interface SendMessageResponse {
   userMessage: ChatMessage;
   assistantMessage: ChatMessage;
@@ -217,6 +303,9 @@ export interface SendMessageResponse {
     status: GenerationStatus;
     prompt: string;
   } | null;
+  // Mutations the mentor performed this turn (autonomous tools). Optional for
+  // back-compat with older responses.
+  actions?: MentorAction[];
 }
 
 // ──────────────────────────────────────────

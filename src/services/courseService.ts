@@ -1,5 +1,10 @@
 import api from "./api";
-import type { JSendResponse, Course, SyllabusResponse } from "../types/api";
+import type {
+  JSendResponse,
+  Course,
+  SyllabusResponse,
+  CurriculumJob,
+} from "../types/api";
 
 /**
  * Read-only course access. Every course belongs to the current user —
@@ -27,5 +32,18 @@ export const courseService = {
     );
     if (!response.data.data) throw new Error("Course not found");
     return response.data.data;
+  },
+
+  // Enqueue an EXTEND_COURSE job; returns the job to poll via useCurriculumJob.
+  generateMore: async (
+    courseId: string,
+    opts?: { focus?: string; lessonCount?: number }
+  ): Promise<CurriculumJob> => {
+    const response = await api.post<JSendResponse<{ job: CurriculumJob }>>(
+      `/courses/${courseId}/generate-more`,
+      opts ?? {}
+    );
+    if (!response.data.data) throw new Error("Failed to request more lessons");
+    return response.data.data.job;
   },
 };

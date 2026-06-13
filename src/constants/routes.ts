@@ -8,6 +8,7 @@ export const ROUTES = {
   LOGIN: "/login",
   REGISTER: "/register",
   DASHBOARD: "/dashboard",
+  ONBOARDING: "/onboarding",
   MENTOR: "/mentor",
   MY_COURSES: "/my-courses",
   COURSE_DETAILS: "/courses/:courseId",

@@ -90,12 +90,20 @@ const MyCourses: React.FC = () => {
               Every course here was generated just for you by your mentor.
             </p>
           </div>
-          <div className="mt-4 md:mt-0">
-            <Link to={ROUTES.MENTOR}>
+          <div className="mt-4 md:mt-0 flex gap-2">
+            <Link to={ROUTES.ONBOARDING}>
               <Button variant="primary" size="sm">
                 <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Learn something
+                </span>
+              </Button>
+            </Link>
+            <Link to={ROUTES.MENTOR}>
+              <Button variant="outline" size="sm">
+                <span className="flex items-center gap-2">
                   <MessageCircle className="w-4 h-4" />
-                  Ask your mentor for a new course
+                  Ask your mentor
                 </span>
               </Button>
             </Link>
@@ -150,22 +158,17 @@ const MyCourses: React.FC = () => {
                     <Badge variant={getDifficultyColor(course.difficulty)}>
                       {course.difficulty}
                     </Badge>
-                    {course.status === "READY" ? (
-                      <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" />
-                        AI Generated
-                      </span>
-                    ) : course.status === "FAILED" ? (
+                    {course.status === "FAILED" ? (
                       <span className="text-xs text-red-500 font-medium flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
                         Generation failed
                       </span>
-                    ) : (
+                    ) : course.status !== "READY" ? (
                       <span className="text-xs text-indigo-500 font-medium flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         Generating…
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                     {course.title}
@@ -214,17 +217,27 @@ const MyCourses: React.FC = () => {
               No courses yet
             </h2>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Tell your mentor what you want to learn and it will build a
-              personalized course for you.
+              Answer a few quick questions and we'll build a personalized
+              course just for you.
             </p>
-            <Link to={ROUTES.MENTOR}>
-              <Button variant="primary">
-                <span className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  Talk to your mentor
-                </span>
-              </Button>
-            </Link>
+            <div className="flex justify-center gap-2">
+              <Link to={ROUTES.ONBOARDING}>
+                <Button variant="primary">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Learn something
+                  </span>
+                </Button>
+              </Link>
+              <Link to={ROUTES.MENTOR}>
+                <Button variant="outline">
+                  <span className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Talk to your mentor
+                  </span>
+                </Button>
+              </Link>
+            </div>
           </div>
         ) : null}
       </div>

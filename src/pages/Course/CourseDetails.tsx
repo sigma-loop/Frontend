@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MessageCircle, X, Sparkles, AlertTriangle } from "lucide-react";
 import MainLayout from "../../components/layouts/MainLayout";
@@ -7,8 +7,9 @@ import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import ChatWidget from "../../components/chat/ChatWidget";
 import { courseService } from "../../services/courseService";
+import { useCurriculumJob } from "../../hooks/useCurriculumJob";
 import { ROUTES, buildRoute } from "../../constants/routes";
-import type { Course, SyllabusResponse } from "../../types/api";
+import type { Course, SyllabusResponse, MentorAction } from "../../types/api";
 
 /**
  * Read-only view of one of the user's generated courses.
@@ -21,26 +22,79 @@ const CourseDetails: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
 
-  useEffect(() => {
-    const fetchCourseData = async () => {
-      if (!courseId) return;
-      setIsLoading(true);
-      try {
-        const [details, syllabusData] = await Promise.all([
-          courseService.getCourse(courseId),
-          courseService.getSyllabus(courseId),
-        ]);
-        setCourse(details);
-        setSyllabus(syllabusData);
-      } catch (error) {
-        console.error("Failed to load course details:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // "Generate more lessons" — enqueue an EXTEND_COURSE job and poll it.
+  const [generateJobId, setGenerateJobId] = useState<string | null>(null);
+  const [isRequestingMore, setIsRequestingMore] = useState(false);
+  const { job: moreJob, isGenerating: moreGenerating } =
+    useCurriculumJob(generateJobId);
 
-    fetchCourseData();
+  const fetchCourseData = useCallback(async () => {
+    if (!courseId) return;
+    setIsLoading(true);
+    try {
+      const [details, syllabusData] = await Promise.all([
+        courseService.getCourse(courseId),
+        courseService.getSyllabus(courseId),
+      ]);
+      setCourse(details);
+      setSyllabus(syllabusData);
+    } catch (error) {
+      console.error("Failed to load course details:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [courseId]);
+
+  useEffect(() => {
+    fetchCourseData();
+  }, [fetchCourseData]);
+
+  // When a generate-more job finishes, refresh the syllabus.
+  useEffect(() => {
+    if (!moreJob) return;
+    if (moreJob.status === "READY") {
+      setGenerateJobId(null);
+      fetchCourseData();
+    } else if (moreJob.status === "FAILED") {
+      setGenerateJobId(null);
+    }
+  }, [moreJob, fetchCourseData]);
+
+  const isBusyGenerating = moreGenerating || isRequestingMore;
+
+  const handleGenerateMore = async () => {
+    if (!courseId) return;
+    setIsRequestingMore(true);
+    try {
+      const job = await courseService.generateMore(courseId);
+      setGenerateJobId(job.id);
+    } catch (error) {
+      console.error("Failed to request more lessons:", error);
+    } finally {
+      setIsRequestingMore(false);
+    }
+  };
+
+  // The course mentor can act autonomously — reflect its changes here.
+  const handleMentorAction = useCallback(
+    (actions: MentorAction[]) => {
+      let refetch = false;
+      for (const a of actions) {
+        if (a.type === "GENERATE_MORE_LESSONS" && a.jobId) {
+          // Reuse the generate-more poll → banner + auto-refetch on READY.
+          setGenerateJobId(a.jobId);
+        } else if (
+          a.type === "CREATE_LESSON" ||
+          a.type === "EDIT_LESSON" ||
+          a.type === "UPDATE_COURSE"
+        ) {
+          refetch = true;
+        }
+      }
+      if (refetch) fetchCourseData();
+    },
+    [fetchCourseData]
+  );
 
   if (isLoading) {
     return (
@@ -171,10 +225,6 @@ const CourseDetails: React.FC = () => {
                 <span className="text-gray-500 dark:text-gray-400 text-sm">
                   {course.meta.lessonCount} Lessons
                 </span>
-                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Generated for you
-                </span>
               </div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 {course.title}
@@ -204,9 +254,33 @@ const CourseDetails: React.FC = () => {
 
         {/* Syllabus */}
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Course Syllabus
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Course Syllabus
+            </h2>
+            {course.status === "READY" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateMore}
+                disabled={isBusyGenerating}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                {isBusyGenerating ? "Generating…" : "Generate more lessons"}
+              </Button>
+            )}
+          </div>
+
+          {isBusyGenerating && (
+            <div className="flex items-center gap-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3 mb-4">
+              <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+              <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                Generating more lessons — they'll appear here when ready.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             {syllabus.lessons.map((lesson) => (
               <Card
@@ -275,6 +349,7 @@ const CourseDetails: React.FC = () => {
               placeholder="Ask about this course..."
               welcomeTitle="Course Mentor"
               welcomeSubtitle={`I can help you navigate "${course?.title}"`}
+              onMentorAction={handleMentorAction}
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Panel,
@@ -14,12 +14,15 @@ import {
   BookOpen,
   Code2,
   Calculator,
+  ListChecks,
+  CheckCircle2,
 } from "lucide-react";
 import { lessonService } from "../../services/lessonService";
-import type { Lesson, Challenge } from "../../types/api";
+import type { Lesson, MentorAction } from "../../types/api";
 import { CHALLENGE_KINDS, SUPPORTED_LANGUAGES } from "../../constants";
 import LessonContent from "./components/LessonContent";
 import ChallengeWorkspace from "./components/ChallengeWorkspace";
+import ChallengeTabs from "./components/ChallengeTabs";
 import ChatWidget from "../../components/chat/ChatWidget";
 import Button from "../../components/ui/Button";
 import PageMeta from "../../components/common/PageMeta";
@@ -33,46 +36,92 @@ const LessonView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(
-    null
-  );
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [selectedLanguage, setSelectedLanguage] = useState<string>("python");
   const [showChat, setShowChat] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("lesson");
 
-  useEffect(() => {
-    const fetchLesson = async () => {
-      if (!lessonId) return;
+  const fetchLesson = useCallback(async () => {
+    if (!lessonId) return;
 
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await lessonService.getLesson(lessonId);
-        setLesson(data);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await lessonService.getLesson(lessonId);
+      setLesson(data);
 
-        // Default to first challenge if available
-        if (data.challenges && data.challenges.length > 0) {
-          const ch = data.challenges[0];
-          setActiveChallenge(ch);
-          if (ch.kind === CHALLENGE_KINDS.PROGRAMMING) {
-            const langs = Object.keys(ch.starterCodes || {}).filter(
-              (k) => !k.startsWith("_") && ch.starterCodes[k]
-            );
-            if (langs.length > 0) setSelectedLanguage(langs[0]);
-          }
-        } else {
-          setActiveChallenge(null);
-        }
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load lesson");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLesson();
+      const chs = data.challenges ?? [];
+      setActiveIndex(0);
+      // Seed completion from the per-challenge `passed` flags.
+      setCompleted(new Set(chs.filter((c) => c.passed).map((c) => c.id)));
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load lesson");
+    } finally {
+      setLoading(false);
+    }
   }, [lessonId]);
+
+  useEffect(() => {
+    fetchLesson();
+  }, [fetchLesson]);
+
+  // Silent refresh (no loading flash, keeps the active challenge) — used when
+  // the mentor edits this lesson from the chat panel.
+  const refreshLesson = useCallback(async () => {
+    if (!lessonId) return;
+    try {
+      const data = await lessonService.getLesson(lessonId);
+      setLesson(data);
+      setCompleted((prev) => {
+        const next = new Set(prev);
+        (data.challenges ?? []).forEach((c) => {
+          if (c.passed) next.add(c.id);
+        });
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }, [lessonId]);
+
+  const handleMentorAction = useCallback(
+    (actions: MentorAction[]) => {
+      if (
+        actions.some(
+          (a) =>
+            a.type === "EDIT_LESSON" &&
+            (!a.lessonId || a.lessonId === lessonId)
+        )
+      ) {
+        refreshLesson();
+      }
+    },
+    [lessonId, refreshLesson]
+  );
+
+  // Keep the selected language valid for the active PROGRAMMING challenge.
+  useEffect(() => {
+    const ch = lesson?.challenges?.[activeIndex];
+    if (ch?.kind === CHALLENGE_KINDS.PROGRAMMING) {
+      const langs = Object.keys(ch.starterCodes || {}).filter(
+        (k) => !k.startsWith("_") && ch.starterCodes[k]
+      );
+      if (langs.length > 0 && !langs.includes(selectedLanguage)) {
+        setSelectedLanguage(langs[0]);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lesson, activeIndex]);
+
+  const handleChallengeCompleted = (challengeId: string) => {
+    setCompleted((prev) => {
+      const next = new Set(prev);
+      next.add(challengeId);
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -93,7 +142,12 @@ const LessonView = () => {
     );
   }
 
-  // Derive available languages from active challenge's starter codes.
+  const challenges = lesson.challenges ?? [];
+  const activeChallenge = challenges[activeIndex] ?? null;
+  const lessonComplete =
+    challenges.length > 0 && challenges.every((c) => completed.has(c.id));
+
+  // Derive available languages from the active challenge's starter codes.
   const challengeLanguages =
     activeChallenge?.kind === CHALLENGE_KINDS.PROGRAMMING
       ? Object.keys(activeChallenge.starterCodes || {}).filter(
@@ -105,17 +159,35 @@ const LessonView = () => {
       ? challengeLanguages
       : [...SUPPORTED_LANGUAGES];
 
-  // The problem statement is appended below the lesson content:
-  // markdown prompt for PROGRAMMING, LaTeX problem for MATH.
+  // The problem statement is appended below the lesson content for PROGRAMMING
+  // (markdown) and MATH (LaTeX). MCQ renders its own prompt + options in the
+  // workspace, so nothing is appended for it.
   const challengeStatement =
     activeChallenge?.kind === CHALLENGE_KINDS.MATH
       ? activeChallenge.problemLatex
-      : activeChallenge?.description;
-  const lessonContentMarkdown =
-    (lesson.contentMarkdown || "# No content available") +
-    (challengeStatement ? "\n\n---\n\n" + challengeStatement : "");
+      : activeChallenge?.kind === CHALLENGE_KINDS.PROGRAMMING
+        ? activeChallenge.description
+        : undefined;
+  const lessonBody = lesson.contentMarkdown || "";
+  const lessonContentMarkdown = challengeStatement
+    ? lessonBody
+      ? lessonBody + "\n\n---\n\n" + challengeStatement
+      : challengeStatement
+    : lessonBody;
 
-  const isMathChallenge = activeChallenge?.kind === CHALLENGE_KINDS.MATH;
+  // Workspace label/icon for the mobile tab.
+  const workspaceLabel =
+    activeChallenge?.kind === CHALLENGE_KINDS.MATH
+      ? "Math"
+      : activeChallenge?.kind === CHALLENGE_KINDS.MCQ
+        ? "Quiz"
+        : "Code";
+  const WorkspaceIcon =
+    activeChallenge?.kind === CHALLENGE_KINDS.MATH
+      ? Calculator
+      : activeChallenge?.kind === CHALLENGE_KINDS.MCQ
+        ? ListChecks
+        : Code2;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white dark:bg-[#161b22] text-gray-900 dark:text-gray-100">
@@ -141,6 +213,12 @@ const LessonView = () => {
               {lesson.title}
             </h1>
           </div>
+          {lessonComplete && (
+            <span className="hidden sm:flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 flex-shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
+              Complete
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
@@ -192,12 +270,8 @@ const LessonView = () => {
                 : "text-gray-500 dark:text-gray-400"
             }`}
           >
-            {isMathChallenge ? (
-              <Calculator className="w-3.5 h-3.5" />
-            ) : (
-              <Code2 className="w-3.5 h-3.5" />
-            )}
-            {isMathChallenge ? "Math" : "Code"}
+            <WorkspaceIcon className="w-3.5 h-3.5" />
+            {workspaceLabel}
           </button>
           <button
             onClick={() => setMobileTab("chat")}
@@ -217,19 +291,34 @@ const LessonView = () => {
           {mobileTab === "lesson" ? (
             <LessonContent content={lessonContentMarkdown} />
           ) : mobileTab === "code" ? (
-            activeChallenge ? (
-              <ChallengeWorkspace
-                key={`mobile-${activeChallenge.id}-${selectedLanguage}`}
-                challenge={activeChallenge}
-                selectedLanguage={selectedLanguage}
-                availableLanguages={availableLanguages}
-                onLanguageChange={setSelectedLanguage}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                No challenge available
+            <div className="flex flex-col h-full">
+              {challenges.length > 1 && (
+                <ChallengeTabs
+                  challenges={challenges}
+                  activeIndex={activeIndex}
+                  completed={completed}
+                  onSelect={setActiveIndex}
+                />
+              )}
+              <div className="flex-1 min-h-0">
+                {activeChallenge ? (
+                  <ChallengeWorkspace
+                    key={`mobile-${activeChallenge.id}-${selectedLanguage}`}
+                    challenge={activeChallenge}
+                    selectedLanguage={selectedLanguage}
+                    availableLanguages={availableLanguages}
+                    onLanguageChange={setSelectedLanguage}
+                    onChallengeCompleted={() =>
+                      handleChallengeCompleted(activeChallenge.id)
+                    }
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                    No challenge available
+                  </div>
+                )}
               </div>
-            )
+            </div>
           ) : (
             <ChatWidget
               scope="LESSON"
@@ -237,6 +326,7 @@ const LessonView = () => {
               placeholder="Ask about this lesson..."
               welcomeTitle="Lesson Assistant"
               welcomeSubtitle={`Ask me anything about "${lesson.title}"`}
+              onMentorAction={handleMentorAction}
             />
           )}
         </div>
@@ -260,19 +350,34 @@ const LessonView = () => {
 
           {/* Middle Panel: Challenge Workspace */}
           <Panel defaultSize={showChat ? 40 : 60} minSize={30}>
-            {activeChallenge ? (
-              <ChallengeWorkspace
-                key={`${activeChallenge.id}-${selectedLanguage}`}
-                challenge={activeChallenge}
-                selectedLanguage={selectedLanguage}
-                availableLanguages={availableLanguages}
-                onLanguageChange={setSelectedLanguage}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                No challenge available for this lesson
+            <div className="flex flex-col h-full">
+              {challenges.length > 1 && (
+                <ChallengeTabs
+                  challenges={challenges}
+                  activeIndex={activeIndex}
+                  completed={completed}
+                  onSelect={setActiveIndex}
+                />
+              )}
+              <div className="flex-1 min-h-0">
+                {activeChallenge ? (
+                  <ChallengeWorkspace
+                    key={`${activeChallenge.id}-${selectedLanguage}`}
+                    challenge={activeChallenge}
+                    selectedLanguage={selectedLanguage}
+                    availableLanguages={availableLanguages}
+                    onLanguageChange={setSelectedLanguage}
+                    onChallengeCompleted={() =>
+                      handleChallengeCompleted(activeChallenge.id)
+                    }
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                    No challenge available for this lesson
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </Panel>
 
           {/* Right Panel: AI Chat (conditional) */}
@@ -301,6 +406,7 @@ const LessonView = () => {
                       placeholder="Ask about this lesson..."
                       welcomeTitle="Lesson Assistant"
                       welcomeSubtitle={`Ask me anything about "${lesson.title}"`}
+                      onMentorAction={handleMentorAction}
                     />
                   </div>
                 </div>

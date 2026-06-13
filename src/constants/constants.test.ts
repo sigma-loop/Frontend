@@ -11,8 +11,12 @@ describe("constants", () => {
     expect(Object.values(ROLES)).toEqual(["STUDENT", "ADMIN"]);
   });
 
-  it("has exactly two challenge kinds: PROGRAMMING and MATH", () => {
-    expect(Object.values(CHALLENGE_KINDS)).toEqual(["PROGRAMMING", "MATH"]);
+  it("has exactly three challenge kinds: PROGRAMMING, MATH, and MCQ", () => {
+    expect(Object.values(CHALLENGE_KINDS)).toEqual([
+      "PROGRAMMING",
+      "MATH",
+      "MCQ",
+    ]);
   });
 
   it("tracks the full generation lifecycle", () => {

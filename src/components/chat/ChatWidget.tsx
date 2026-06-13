@@ -7,11 +7,18 @@ import rehypeHighlight from "rehype-highlight";
 import "katex/dist/katex.min.css";
 import "highlight.js/styles/github-dark-dimmed.min.css";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, X, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  Sparkles,
+  X,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowUpRight,
+  Loader2,
+} from "lucide-react";
 import { chatService } from "../../services/chatService";
 import { useCurriculumJob } from "../../hooks/useCurriculumJob";
 import { buildRoute, ROUTES } from "../../constants/routes";
-import type { ChatThread, ChatMessage } from "../../types/api";
+import type { ChatThread, ChatMessage, MentorAction } from "../../types/api";
 
 // ──────────────────────────────────────────
 // Props
@@ -25,6 +32,9 @@ export interface ChatWidgetProps {
   welcomeTitle?: string;
   welcomeSubtitle?: string;
   className?: string;
+  // Fired after the mentor performs autonomous actions, so the host view can
+  // refresh (e.g. CourseDetails re-fetches its syllabus).
+  onMentorAction?: (actions: MentorAction[]) => void;
 }
 
 // ──────────────────────────────────────────
@@ -111,6 +121,101 @@ const MessageContent: React.FC<{ content: string }> = ({ content }) => (
 
 const NEW_CHAT_ID = "new";
 
+// ──────────────────────────────────────────
+// Mentor actions (autonomous tool results, shown under the assistant message)
+// ──────────────────────────────────────────
+
+const MentorActionRow: React.FC<{ action: MentorAction }> = ({ action }) => {
+  const navigate = useNavigate();
+  const isJob =
+    !!action.jobId &&
+    (action.type === "CREATE_COURSE" ||
+      action.type === "GENERATE_MORE_LESSONS");
+  // One poller per async-job row (legal: each row is its own component).
+  const { job, isGenerating } = useCurriculumJob(
+    isJob ? action.jobId ?? null : null
+  );
+
+  // Resolve a destination course id from the action or the finished job.
+  const courseId = action.courseId || job?.courseId || null;
+
+  const linkClass =
+    "flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex-shrink-0";
+
+  let trailing: React.ReactNode = null;
+  if (isJob) {
+    if (isGenerating) {
+      trailing = (
+        <span className="flex items-center gap-1 text-xs text-indigo-500 dark:text-indigo-400 flex-shrink-0">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Generating…
+        </span>
+      );
+    } else if (job?.status === "READY" && courseId) {
+      trailing = (
+        <button
+          onClick={() =>
+            navigate(buildRoute(ROUTES.COURSE_DETAILS, { courseId }))
+          }
+          className={linkClass}
+        >
+          Open course
+          <ArrowUpRight className="w-3 h-3" />
+        </button>
+      );
+    } else if (job?.status === "FAILED") {
+      trailing = <span className="text-xs text-red-500 flex-shrink-0">Failed</span>;
+    }
+  } else if (action.lessonId) {
+    trailing = (
+      <button
+        onClick={() =>
+          navigate(buildRoute(ROUTES.LESSON, { lessonId: action.lessonId! }))
+        }
+        className={linkClass}
+      >
+        Open lesson
+        <ArrowUpRight className="w-3 h-3" />
+      </button>
+    );
+  } else if (courseId) {
+    trailing = (
+      <button
+        onClick={() =>
+          navigate(buildRoute(ROUTES.COURSE_DETAILS, { courseId }))
+        }
+        className={linkClass}
+      >
+        Open
+        <ArrowUpRight className="w-3 h-3" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#161b22] px-3 py-2">
+      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+      <span className="flex-1 min-w-0 truncate text-xs text-gray-700 dark:text-gray-300">
+        {action.summary}
+      </span>
+      {trailing}
+    </div>
+  );
+};
+
+const MentorActionsList: React.FC<{ actions: MentorAction[] }> = ({
+  actions,
+}) => (
+  <div className="mt-3 space-y-1.5">
+    {actions.map((a, i) => (
+      <MentorActionRow
+        key={`${a.type}-${a.jobId || a.lessonId || a.courseId || i}`}
+        action={a}
+      />
+    ))}
+  </div>
+);
+
 const ChatWidget: React.FC<ChatWidgetProps> = ({
   scope,
   scopeId,
@@ -119,10 +224,16 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   welcomeTitle = "How can I help?",
   welcomeSubtitle,
   className = "",
+  onMentorAction,
 }) => {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string>(NEW_CHAT_ID);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Mentor actions keyed by the assistant message they belong to (session-only;
+  // the durable record lives server-side in the MentorAction log).
+  const [actionsByMessage, setActionsByMessage] = useState<
+    Record<string, MentorAction[]>
+  >({});
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
@@ -249,6 +360,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         userMessage,
         assistantMessage,
         curriculumJob: newJob,
+        actions,
       } = await chatService.sendMessage(threadId, messageContent);
 
       setMessages((prev) => [
@@ -256,6 +368,15 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
         userMessage,
         assistantMessage,
       ]);
+
+      // Attach any autonomous actions to this assistant message.
+      if (actions && actions.length > 0) {
+        setActionsByMessage((prev) => ({
+          ...prev,
+          [assistantMessage.id]: actions,
+        }));
+        onMentorAction?.(actions);
+      }
 
       // The mentor decided to generate a curriculum — start polling the job.
       if (newJob) {
@@ -548,6 +669,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
                       <div className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-200 prose prose-sm prose-slate dark:prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent prose-pre:my-0">
                         <MessageContent content={msg.content} />
                       </div>
+                      {msg.role === "ASSISTANT" &&
+                      actionsByMessage[msg.id]?.length ? (
+                        <MentorActionsList actions={actionsByMessage[msg.id]} />
+                      ) : null}
                     </div>
                   </div>
                 </div>

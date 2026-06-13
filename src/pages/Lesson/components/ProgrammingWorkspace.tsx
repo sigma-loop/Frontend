@@ -17,6 +17,7 @@ interface ProgrammingWorkspaceProps {
   challengeId: string;
   availableLanguages?: string[];
   onLanguageChange?: (lang: string) => void;
+  onCompleted?: () => void;
 }
 
 /**
@@ -29,6 +30,7 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
   challengeId,
   availableLanguages = [],
   onLanguageChange,
+  onCompleted,
 }) => {
   // Load saved code from localStorage, fall back to initialCode
   const storageKey = `sigmaloop_code_${challengeId}_${language}`;
@@ -95,6 +97,9 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
 
       if (result.lessonCompleted) {
         setLessonCompleted(true);
+      }
+      if (result.status === "PASSED") {
+        onCompleted?.();
       }
     } catch (error) {
       console.error("Submission error:", error);

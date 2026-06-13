@@ -65,6 +65,33 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
 }
 
 /**
+ * Skeleton shown while a personalized course is being generated — mimics the
+ * eventual course layout (title + description + lesson rows).
+ */
+export function CurriculumGeneratingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <Skeleton className="h-7 w-2/3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="glass-card rounded-xl p-4 flex items-center gap-3"
+          >
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Pre-built skeleton for the dashboard stats section.
  */
 export function DashboardSkeleton() {
