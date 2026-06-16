@@ -1,11 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import rehypeHighlight from "rehype-highlight";
-import "katex/dist/katex.min.css";
-import "highlight.js/styles/github-dark-dimmed.min.css";
 import { useNavigate } from "react-router-dom";
 import {
   Sparkles,
@@ -14,11 +7,18 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { chatService } from "../../services/chatService";
 import { useCurriculumJob } from "../../hooks/useCurriculumJob";
 import { buildRoute, ROUTES } from "../../constants/routes";
-import type { ChatThread, ChatMessage, MentorAction } from "../../types/api";
+import { MessageContent } from "./MessageContent";
+import type {
+  ChatThread,
+  ChatMessage,
+  ChatCodeContext,
+  MentorAction,
+} from "../../types/api";
 
 // ──────────────────────────────────────────
 // Props
@@ -32,88 +32,16 @@ export interface ChatWidgetProps {
   welcomeTitle?: string;
   welcomeSubtitle?: string;
   className?: string;
+  // Open this thread on mount (e.g. the thread carried over from a guest chat
+  // after signup). Falls back to the most-recent-thread behavior when unset.
+  initialThreadId?: string;
   // Fired after the mentor performs autonomous actions, so the host view can
   // refresh (e.g. CourseDetails re-fetches its syllabus).
   onMentorAction?: (actions: MentorAction[]) => void;
+  // Supplies the learner's current editor code at send time (lesson chat), so
+  // the hint model can see their actual attempt. Read fresh on every send.
+  getCodeContext?: () => ChatCodeContext | null;
 }
-
-// ──────────────────────────────────────────
-// Markdown renderer (shared)
-// ──────────────────────────────────────────
-
-const remarkPlugins = [remarkGfm, remarkMath];
-const rehypePlugins = [rehypeKatex, rehypeHighlight];
-
-const MessageContent: React.FC<{ content: string }> = ({ content }) => (
-  <ReactMarkdown
-    remarkPlugins={remarkPlugins}
-    rehypePlugins={rehypePlugins}
-    components={{
-      pre({ children }) {
-        return (
-          <pre className="rounded-xl bg-[#22272e] text-sm overflow-x-auto p-4 my-3">
-            {children}
-          </pre>
-        );
-      },
-      code({ className, children, ...props }) {
-        const isInline = !className;
-        if (isInline) {
-          return (
-            <code
-              className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 text-[13px] font-mono"
-              {...props}
-            >
-              {children}
-            </code>
-          );
-        }
-        return (
-          <code className={className} {...props}>
-            {children}
-          </code>
-        );
-      },
-      a({ children, ...props }) {
-        return (
-          <a
-            className="text-indigo-600 dark:text-indigo-400 underline underline-offset-2 hover:text-indigo-700 dark:hover:text-indigo-300"
-            target="_blank"
-            rel="noopener noreferrer"
-            {...props}
-          >
-            {children}
-          </a>
-        );
-      },
-      table({ children }) {
-        return (
-          <div className="overflow-x-auto my-3 rounded-lg border border-gray-200 dark:border-gray-700">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-              {children}
-            </table>
-          </div>
-        );
-      },
-      th({ children }) {
-        return (
-          <th className="px-3 py-2 text-left font-semibold bg-gray-50 dark:bg-gray-800/80">
-            {children}
-          </th>
-        );
-      },
-      td({ children }) {
-        return (
-          <td className="px-3 py-2 border-t border-gray-100 dark:border-gray-800">
-            {children}
-          </td>
-        );
-      },
-    }}
-  >
-    {content}
-  </ReactMarkdown>
-);
 
 // ──────────────────────────────────────────
 // ChatWidget
@@ -133,7 +61,7 @@ const MentorActionRow: React.FC<{ action: MentorAction }> = ({ action }) => {
       action.type === "GENERATE_MORE_LESSONS");
   // One poller per async-job row (legal: each row is its own component).
   const { job, isGenerating } = useCurriculumJob(
-    isJob ? action.jobId ?? null : null
+    isJob ? (action.jobId ?? null) : null
   );
 
   // Resolve a destination course id from the action or the finished job.
@@ -164,7 +92,9 @@ const MentorActionRow: React.FC<{ action: MentorAction }> = ({ action }) => {
         </button>
       );
     } else if (job?.status === "FAILED") {
-      trailing = <span className="text-xs text-red-500 flex-shrink-0">Failed</span>;
+      trailing = (
+        <span className="text-xs text-red-500 flex-shrink-0">Failed</span>
+      );
     }
   } else if (action.lessonId) {
     trailing = (
@@ -224,7 +154,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   welcomeTitle = "How can I help?",
   welcomeSubtitle,
   className = "",
+  initialThreadId,
   onMentorAction,
+  getCodeContext,
 }) => {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string>(NEW_CHAT_ID);
@@ -240,6 +172,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const navigate = useNavigate();
@@ -271,10 +204,17 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
       try {
         const data = await chatService.listThreads(scope, scopeId);
         setThreads(data);
-        // For non-sidebar mode, auto-load the most recent thread if one exists
-        if (!showSidebar && data.length > 0) {
-          setCurrentChatId(data[0].id);
-          const msgs = await chatService.getMessages(data[0].id);
+        // Open a specific thread (e.g. carried over from a guest chat), else in
+        // non-sidebar mode auto-load the most recent thread if one exists.
+        const openId =
+          initialThreadId && data.some((t) => t.id === initialThreadId)
+            ? initialThreadId
+            : !showSidebar && data.length > 0
+              ? data[0].id
+              : null;
+        if (openId) {
+          setCurrentChatId(openId);
+          const msgs = await chatService.getMessages(openId);
           setMessages(msgs);
         }
       } catch (err) {
@@ -284,7 +224,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
       }
     };
     loadThreads();
-  }, [scope, scopeId, showSidebar]);
+  }, [scope, scopeId, showSidebar, initialThreadId]);
 
   // Load messages when switching threads (sidebar mode)
   const selectThread = useCallback(async (threadId: string) => {
@@ -323,6 +263,29 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
     }
   };
 
+  // Clear the current conversation: delete the open thread server-side (wiping
+  // its stored messages) and reset to a fresh, empty chat. Used by the embedded
+  // (no-sidebar) lesson/course chat, which has no per-thread list to manage.
+  const handleClearChat = async () => {
+    if (isClearing || isTyping) return;
+    const threadId = currentChatId;
+    setIsClearing(true);
+    try {
+      if (threadId !== NEW_CHAT_ID) {
+        await chatService.deleteThread(threadId);
+        setThreads((prev) => prev.filter((t) => t.id !== threadId));
+      }
+      setCurrentChatId(NEW_CHAT_ID);
+      setMessages([]);
+      setActionsByMessage({});
+      setInputValue("");
+    } catch (err) {
+      console.error("Failed to clear chat:", err);
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim() || isTyping) return;
@@ -356,12 +319,16 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
       };
       setMessages((prev) => [...prev, optimisticUserMsg]);
 
+      // Attach the learner's current editor code (lesson chat) so the model can
+      // see their attempt. Read fresh here so it reflects the latest edits.
+      const codeContext = getCodeContext?.() ?? null;
+
       const {
         userMessage,
         assistantMessage,
         curriculumJob: newJob,
         actions,
-      } = await chatService.sendMessage(threadId, messageContent);
+      } = await chatService.sendMessage(threadId, messageContent, codeContext);
 
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== optimisticUserMsg.id),
@@ -570,6 +537,25 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
           </div>
         )}
 
+        {/* Embedded (no-sidebar) header — Clear chat */}
+        {!showSidebar && messages.length > 0 && (
+          <div className="flex items-center justify-end px-4 py-2 border-b border-gray-100 dark:border-gray-800/50 flex-shrink-0">
+            <button
+              onClick={handleClearChat}
+              disabled={isClearing || isTyping}
+              title="Clear this conversation"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {isClearing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+              Clear chat
+            </button>
+          </div>
+        )}
+
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto chat-scrollbar">
           {isLoadingMessages ? (
@@ -599,9 +585,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
             </div>
           ) : isNewEmptyChat && !isLoadingThreads ? (
             <div className="flex flex-col items-center justify-center h-full px-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-5 shadow-lg shadow-indigo-500/20">
+              <div className="icon-tile w-14 h-14 rounded-xl mb-5">
                 <svg
-                  className="w-7 h-7 text-white"
+                  className="w-7 h-7"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -630,7 +616,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
                   key={msg.id}
                   className={`py-4 ${
                     msg.role === "ASSISTANT"
-                      ? "bg-gray-50/80 dark:bg-[#0d1117]/60 rounded-2xl my-1"
+                      ? "bg-gray-50/80 dark:bg-[#0d1117]/60 rounded-xl my-1"
                       : ""
                   }`}
                 >
@@ -639,8 +625,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium ${
                           msg.role === "ASSISTANT"
-                            ? "bg-gradient-to-br from-emerald-500 to-teal-600"
-                            : "bg-gradient-to-br from-indigo-500 to-purple-600"
+                            ? "bg-indigo-600"
+                            : "bg-gray-700 dark:bg-gray-600"
                         }`}
                       >
                         {msg.role === "ASSISTANT" ? (
@@ -680,10 +666,10 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
 
               {/* Typing indicator */}
               {isTyping && (
-                <div className="py-4 bg-gray-50/80 dark:bg-[#0d1117]/60 rounded-2xl my-1">
+                <div className="py-4 bg-gray-50/80 dark:bg-[#0d1117]/60 rounded-xl my-1">
                   <div className="max-w-2xl mx-auto px-4 sm:px-6 flex gap-3">
                     <div className="flex-shrink-0 pt-0.5">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center">
                         <svg
                           className="w-4 h-4 text-white"
                           fill="none"
@@ -795,7 +781,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({
           <div className="max-w-2xl mx-auto">
             <form
               onSubmit={handleSendMessage}
-              className="relative flex items-end gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#0d1117] px-4 py-2.5 shadow-sm focus-within:border-indigo-300 dark:focus-within:border-indigo-500/40 focus-within:shadow-md transition-all"
+              className="relative flex items-end gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#0d1117] px-4 py-2.5 shadow-sm focus-within:border-indigo-300 dark:focus-within:border-indigo-500/40 focus-within:shadow-md transition-all"
             >
               <textarea
                 ref={inputRef}
