@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import darkLogo from "../../assets/dark-logo.png";
 import lightLogo from "../../assets/light-logo.png";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -118,6 +119,9 @@ const Navbar: React.FC = () => {
 
           {/* Actions */}
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
+            {/* Language picker — available to everyone, incl. guests on Home */}
+            <LanguageSwitcher />
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -265,6 +269,10 @@ const Navbar: React.FC = () => {
                 {t("Settings")}
               </NavLink>
             )}
+            {/* Language picker (guests included) */}
+            <div className="pt-1">
+              <LanguageSwitcher full />
+            </div>
           </div>
 
           <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3">

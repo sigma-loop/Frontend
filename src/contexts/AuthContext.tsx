@@ -28,6 +28,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
+    // Localization is per-account: signal listeners (LocaleContext) to forget
+    // the chosen language so the site resets to its English/LTR default for
+    // the next (guest) session.
+    window.dispatchEvent(new Event("auth:logout"));
   };
 
   useEffect(() => {
