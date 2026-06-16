@@ -22,6 +22,7 @@ import Settings from "./pages/Settings/Settings";
 import Terms from "./pages/Legal/Terms";
 import Privacy from "./pages/Legal/Privacy";
 import Contact from "./pages/Legal/Contact";
+import DesignSystemShowcase from "./pages/DesignSystemShowcase";
 
 // Admin Pages — GOD panel
 import CommandCenter from "./pages/Admin/CommandCenter/CommandCenter";
@@ -84,6 +85,7 @@ function App() {
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/design-system" element={<DesignSystemShowcase />} />
 
                 {/* Protected Routes */}
                 <Route element={<ProtectedRoute />}>
