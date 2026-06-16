@@ -17,8 +17,10 @@ import {
 import {
   DEFAULT_LOCALE,
   getLocaleDir,
+  getLocaleNativeName,
   type TextDirection,
 } from "../constants/locales";
+import TranslationLoadingScreen from "../components/common/TranslationLoadingScreen";
 
 type TParams = Record<string, string | number>;
 
@@ -184,10 +186,21 @@ export const LocaleProvider: React.FC<{ children: ReactNode }> = ({
       }}
     >
       {children}
-      {/* Slim indeterminate progress bar — replaces the old corner toast. The
-          full-page skeleton (MainLayout) covers a language switch; this bar
-          marks the smaller incremental fetches on navigation. */}
-      {isTranslating && language !== DEFAULT_LOCALE && (
+
+      {/* Switching INTO a language: a full-screen app-shell skeleton covers the
+          ENTIRE app (every page + the navbar), so the whole UI reads as loading
+          until the new language is ready — not just a bar on some pages. */}
+      {isSwitchingLanguage && language !== DEFAULT_LOCALE && (
+        <TranslationLoadingScreen
+          label={t("Translating to {language}…", {
+            language: getLocaleNativeName(language),
+          })}
+        />
+      )}
+
+      {/* Slim indeterminate progress bar for the smaller incremental fetches
+          that happen as new strings appear on navigation (not a full switch). */}
+      {isTranslating && !isSwitchingLanguage && language !== DEFAULT_LOCALE && (
         <div
           className="fixed inset-x-0 top-0 z-[200] h-0.5 overflow-hidden bg-indigo-500/15"
           role="status"
