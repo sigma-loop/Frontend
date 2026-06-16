@@ -53,7 +53,7 @@ export class ErrorBoundary extends React.Component<
 
       return (
         <div className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center">
-          <div className="glass-card rounded-2xl p-8 max-w-md">
+          <div className="glass-card rounded-xl p-8 max-w-md">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Something went wrong
             </h2>
@@ -61,7 +61,7 @@ export class ErrorBoundary extends React.Component<
               An unexpected error occurred. Please try again.
             </p>
             {this.state.error && (
-              <pre className="text-xs text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 p-3 rounded-lg mb-4 overflow-auto max-h-32 text-left">
+              <pre className="text-xs text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 p-3 rounded-lg mb-4 overflow-auto max-h-32 text-start">
                 {this.state.error.message}
               </pre>
             )}
