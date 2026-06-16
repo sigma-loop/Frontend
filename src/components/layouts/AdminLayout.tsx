@@ -17,6 +17,7 @@ import {
   MessagesSquare,
   MessageSquare,
   Wand2,
+  Settings,
   LogOut,
   Menu,
   X,
@@ -91,6 +92,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
         <NavLink to="/admin" end onClick={closeSidebar} className={linkClass}>
           <LayoutDashboard className="w-5 h-5" />
           <span>{t("Command Center")}</span>
+        </NavLink>
+        <NavLink
+          to="/admin/settings"
+          onClick={closeSidebar}
+          className={linkClass}
+        >
+          <Settings className="w-5 h-5" />
+          <span>{t("Settings")}</span>
         </NavLink>
 
         <p className="px-4 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">

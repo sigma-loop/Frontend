@@ -109,7 +109,7 @@ import { ROUTES, buildRoute } from '../constants/routes';
 | `/my-courses`        | MyCourses     | Protected         | MainLayout   | Lists the current user's courses; "Learn something" → `/onboarding`       |
 | `/courses/:courseId` | CourseDetails | Protected         | MainLayout   | Generated course + "Generate more lessons"; ownership-checked server-side |
 | `/lessons/:lessonId` | LessonView    | Protected         | LessonLayout | Branches on `challenge.kind`; multi-challenge via `ChallengeTabs`         |
-| `/admin/*`           | Admin pages   | Protected (ADMIN) | AdminLayout  | Users, jobs, system                                                       |
+| `/admin/*`           | Admin pages   | Protected (ADMIN) | AdminLayout  | Command Center, runtime **Settings** (`/admin/settings`), collections explorer |
 
 There is **no** `/courses` public catalog and **no** instructor-authoring pages. All content is per-user generated.
 

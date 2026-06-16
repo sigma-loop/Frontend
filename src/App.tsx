@@ -24,6 +24,7 @@ import CommandCenter from "./pages/Admin/CommandCenter/CommandCenter";
 import ResourceList from "./pages/Admin/Explorer/ResourceList";
 import ResourceDetail from "./pages/Admin/Explorer/ResourceDetail";
 import UserOverview from "./pages/Admin/UserOverview/UserOverview";
+import AdminSettings from "./pages/Admin/Settings/AdminSettings";
 
 // Protected Route Wrapper
 const ProtectedRoute = () => {
@@ -97,6 +98,7 @@ function App() {
                   path="/admin/overview/:userId"
                   element={<UserOverview />}
                 />
+                <Route path="/admin/settings" element={<AdminSettings />} />
                 {/* Legacy admin paths → new explorer */}
                 <Route
                   path="/admin/users"

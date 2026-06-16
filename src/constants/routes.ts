@@ -23,6 +23,7 @@ export const ROUTES = {
   ADMIN_DATA: "/admin/data/:resource",
   ADMIN_RECORD: "/admin/data/:resource/:id",
   ADMIN_USER_OVERVIEW: "/admin/overview/:userId",
+  ADMIN_SETTINGS: "/admin/settings",
 } as const;
 
 /**

@@ -438,6 +438,24 @@ export interface AdminResourceCatalogEntry {
   sortFields: string[];
 }
 
+export type AppSettingType = "string" | "number" | "boolean" | "enum" | "csv";
+
+export interface AppSetting {
+  key: string;
+  group: string;
+  label: string;
+  help?: string;
+  type: AppSettingType;
+  options?: string[];
+  min?: number;
+  max?: number;
+  editable: boolean;
+  sensitive: boolean;
+  source: "db" | "env";
+  value: string | number | boolean | string[] | null;
+  configured?: boolean;
+}
+
 export interface AdminCountBucket {
   _id: string | null;
   count: number;

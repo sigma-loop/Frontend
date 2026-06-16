@@ -10,6 +10,7 @@ import type {
   AdminResourceCatalogEntry,
   AdminMetrics,
   AdminUserOverview,
+  AppSetting,
 } from "../types/api";
 
 /**
@@ -168,5 +169,34 @@ export const adminService = {
 
   deleteRecord: async (resource: string, id: string): Promise<void> => {
     await api.delete(`/admin/data/${resource}/${id}`);
+  },
+
+  // ============ Runtime app settings (env override layer) ============
+  getSettings: async (): Promise<{
+    settings: AppSetting[];
+    groups: string[];
+  }> => {
+    const response =
+      await api.get<
+        JSendResponse<{ settings: AppSetting[]; groups: string[] }>
+      >("/admin/settings");
+    return response.data.data ?? { settings: [], groups: [] };
+  },
+
+  updateSettings: async (
+    updates: Array<{ key: string; value: unknown }>
+  ): Promise<AppSetting[]> => {
+    const response = await api.put<JSendResponse<{ settings: AppSetting[] }>>(
+      "/admin/settings",
+      { updates }
+    );
+    return response.data.data?.settings ?? [];
+  },
+
+  resetSetting: async (key: string): Promise<AppSetting[]> => {
+    const response = await api.delete<
+      JSendResponse<{ settings: AppSetting[] }>
+    >(`/admin/settings/${encodeURIComponent(key)}`);
+    return response.data.data?.settings ?? [];
   },
 };
