@@ -8,6 +8,9 @@
 @theme {
   --font-sans: "Inter", sans-serif;
   --font-display: "Outfit", sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "SFMono-Regular", "Menlo", "Cascadia Code",
+    "Roboto Mono", monospace;
 }
 
 @layer base {
@@ -21,6 +24,19 @@
     color-scheme: dark;
   }
 
+  /* Hide scrollbars site-wide while keeping scroll fully functional. */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE / old Edge */
+  }
+
+  *::-webkit-scrollbar {
+    /* Chromium / Safari */
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
   h1,
   h2,
   h3,
@@ -29,75 +45,131 @@
   h6 {
     @apply font-display tracking-tight;
   }
+
+  /* RTL: the whole UI mirrors via <html dir="rtl">, but code, math, and LaTeX
+     are inherently left-to-right and must NOT be flipped. Pin them back to LTR
+     wherever they appear (lesson body, chat, challenge prompts). */
+  [dir="rtl"] pre,
+  [dir="rtl"] code,
+  [dir="rtl"] kbd,
+  [dir="rtl"] samp,
+  [dir="rtl"] .hljs,
+  [dir="rtl"] .katex,
+  [dir="rtl"] .katex-display,
+  [dir="rtl"] math-field,
+  [dir="rtl"] .monaco-editor {
+    direction: ltr;
+  }
+
+  [dir="rtl"] pre,
+  [dir="rtl"] .katex-display {
+    text-align: left;
+  }
 }
 
 @layer utilities {
+  /* Clean & technical surfaces — flat, hairline-bordered, no frosted glass.
+     (Names kept for compatibility; the look is now solid, not glass.) */
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+    @apply bg-white border border-gray-200 shadow-sm;
   }
 
   .dark .glass-panel {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-xl shadow-black/20;
+    @apply bg-[#161b22] border-gray-800 shadow-none;
   }
 
+  /* Interactive card: edge defined by a hairline that firms up on hover —
+     no shadow lift, no blur. */
   .glass-card {
-    @apply bg-white/60 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300;
+    @apply bg-white border border-gray-200 transition-colors duration-200 hover:border-gray-300;
   }
 
   .dark .glass-card {
-    @apply bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg shadow-black/20 hover:shadow-xl;
+    @apply bg-[#161b22] border-gray-800 hover:border-gray-700;
   }
 
-  /* Premium gradient text */
+  /* Brand accent text — a single confident hue, not a rainbow gradient. */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-linear-to-r from-indigo-600 to-violet-600;
+    @apply text-indigo-600;
   }
 
   .dark .text-gradient {
-    @apply from-indigo-400 to-violet-400;
+    @apply text-indigo-400;
   }
 
-  /* Custom scrollbar for chat panels */
+  /* Flat accent tile for feature/section icons (replaces gradient tiles). */
+  .icon-tile {
+    @apply inline-flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600;
+  }
+
+  .dark .icon-tile {
+    @apply bg-indigo-500/10 text-indigo-400;
+  }
+
+  /* Technical eyebrow label — small, monospaced, tracked-out. */
+  .eyebrow {
+    @apply font-mono text-xs font-medium uppercase tracking-[0.12em] text-gray-500;
+  }
+
+  .dark .eyebrow {
+    @apply text-gray-400;
+  }
+
+  /* Chat panels follow the global hidden-scrollbar treatment (scroll still works).
+     Kept as an explicit override because the class selector out-specifies the
+     universal rule above. */
   .chat-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-  }
-
-  .chat-scrollbar:hover {
-    scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+    scrollbar-width: none;
   }
 
   .chat-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    display: none;
   }
+}
 
-  .chat-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 4px 0;
-  }
+/* MathLive math-field theming (MATH challenge editor) */
+math-field {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  --caret-color: #6366f1;
+  --selection-background-color: rgba(99, 102, 241, 0.2);
+  --primary: #6366f1;
+}
 
-  .chat-scrollbar::-webkit-scrollbar-thumb {
-    background-color: transparent;
-    border-radius: 9999px;
-  }
+math-field:focus,
+math-field:focus-within {
+  outline: none;
+}
 
-  .chat-scrollbar:hover::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.4);
-  }
+math-field::part(menu-toggle) {
+  color: #9ca3af;
+}
 
-  .chat-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(156, 163, 175, 0.6);
-  }
+/* Long expressions scroll inside the field instead of spilling out of the panel. */
+math-field {
+  max-width: 100%;
+  overflow-x: auto;
+}
 
-  .dark .chat-scrollbar:hover {
-    scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
-  }
+/* On-screen math keyboard: keep it inside the viewport so it never triggers a
+   horizontal page scrollbar, and cap its height on short screens (it mounts to
+   <body> as a fixed panel, so it scrolls internally rather than off-screen). */
+body > .ML__keyboard {
+  max-width: 100vw;
+  box-sizing: border-box;
+}
 
-  .dark .chat-scrollbar:hover::-webkit-scrollbar-thumb {
-    background-color: rgba(75, 85, 99, 0.5);
-  }
+body > .ML__keyboard .MLK__plate {
+  max-width: 100vw;
+  box-sizing: border-box;
+}
 
-  .dark .chat-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(75, 85, 99, 0.7);
+@media (max-height: 640px) {
+  body > .ML__keyboard .MLK__plate {
+    max-height: 60vh;
+    overflow-y: auto;
   }
 }

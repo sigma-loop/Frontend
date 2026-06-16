@@ -6,9 +6,11 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import Input from "../../components/ui/Input";
+import LearnNewThingButton from "../../components/ui/LearnNewThingButton";
 import { courseService } from "../../services/courseService";
 import { curriculumService } from "../../services/curriculumService";
 import { ROUTES, buildRoute } from "../../constants/routes";
+import { useLocale } from "../../contexts/LocaleContext";
 import type { Course, CurriculumJob } from "../../types/api";
 
 const POLL_WHILE_GENERATING_MS = 5000;
@@ -18,6 +20,7 @@ const POLL_WHILE_GENERATING_MS = 5000;
  * every course here was generated for this user by the mentor.
  */
 const MyCourses: React.FC = () => {
+  const { t } = useLocale();
   const [courses, setCourses] = useState<Course[]>([]);
   const [activeJobs, setActiveJobs] = useState<CurriculumJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,31 +82,26 @@ const MyCourses: React.FC = () => {
   };
 
   return (
-    <MainLayout title="My Courses">
+    <MainLayout title={t("My Courses")}>
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              My Courses
+              {t("My Courses")}
             </h1>
             <p className="mt-1 text-gray-500 dark:text-gray-400">
-              Every course here was generated just for you by your mentor.
+              {t(
+                "Every course here was generated just for you by your mentor."
+              )}
             </p>
           </div>
-          <div className="mt-4 md:mt-0 flex gap-2">
-            <Link to={ROUTES.ONBOARDING}>
-              <Button variant="primary" size="sm">
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Learn something
-                </span>
-              </Button>
-            </Link>
+          <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
+            <LearnNewThingButton size="sm" />
             <Link to={ROUTES.MENTOR}>
               <Button variant="outline" size="sm">
                 <span className="flex items-center gap-2">
                   <MessageCircle className="w-4 h-4" />
-                  Ask your mentor
+                  {t("Ask your mentor")}
                 </span>
               </Button>
             </Link>
@@ -112,10 +110,10 @@ const MyCourses: React.FC = () => {
 
         <div className="w-full">
           <Input
-            placeholder="Search your courses by title or tag..."
+            placeholder={t("Search your courses by title or tag...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-md"
+            className="w-full sm:max-w-md"
           />
         </div>
 
@@ -130,7 +128,7 @@ const MyCourses: React.FC = () => {
                 <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-                    Generating a course for you…
+                    {t("Generating a course for you…")}
                   </p>
                   <p className="text-xs text-indigo-500/80 dark:text-indigo-400/80 truncate">
                     "{job.prompt}"
@@ -156,17 +154,17 @@ const MyCourses: React.FC = () => {
                 <div className="flex-grow">
                   <div className="flex justify-between items-start mb-2">
                     <Badge variant={getDifficultyColor(course.difficulty)}>
-                      {course.difficulty}
+                      {t(course.difficulty)}
                     </Badge>
                     {course.status === "FAILED" ? (
                       <span className="text-xs text-red-500 font-medium flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
-                        Generation failed
+                        {t("Generation failed")}
                       </span>
                     ) : course.status !== "READY" ? (
                       <span className="text-xs text-indigo-500 font-medium flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        Generating…
+                        {t("Generating…")}
                       </span>
                     ) : null}
                   </div>
@@ -187,10 +185,12 @@ const MyCourses: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {course.meta.lessonCount} Lessons ·{" "}
-                    {course.meta.durationHours}h
+                    {t("{count} Lessons · {hours}h", {
+                      count: course.meta.lessonCount,
+                      hours: course.meta.durationHours,
+                    })}
                   </span>
                   <Link
                     to={buildRoute(ROUTES.COURSE_DETAILS, {
@@ -203,7 +203,7 @@ const MyCourses: React.FC = () => {
                       disabled={course.status !== "READY"}
                       className="hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200"
                     >
-                      View Course
+                      {t("View Course")}
                     </Button>
                   </Link>
                 </div>
@@ -214,26 +214,20 @@ const MyCourses: React.FC = () => {
           <div className="text-center py-16">
             <Sparkles className="w-10 h-10 text-indigo-400 mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-              No courses yet
+              {t("No courses yet")}
             </h2>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Answer a few quick questions and we'll build a personalized
-              course just for you.
+              {t(
+                "Answer a few quick questions and we'll build a personalized course just for you."
+              )}
             </p>
-            <div className="flex justify-center gap-2">
-              <Link to={ROUTES.ONBOARDING}>
-                <Button variant="primary">
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Learn something
-                  </span>
-                </Button>
-              </Link>
-              <Link to={ROUTES.MENTOR}>
-                <Button variant="outline">
-                  <span className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
+              <LearnNewThingButton />
+              <Link to={ROUTES.MENTOR} className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <span className="flex items-center justify-center gap-2">
                     <MessageCircle className="w-4 h-4" />
-                    Talk to your mentor
+                    {t("Talk to your mentor")}
                   </span>
                 </Button>
               </Link>

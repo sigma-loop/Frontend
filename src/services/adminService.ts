@@ -1,5 +1,16 @@
 import api from "./api";
-import type { JSendResponse, CurriculumJob, User } from "../types/api";
+import type {
+  JSendResponse,
+  CurriculumJob,
+  User,
+  AdminListResult,
+  AdminRecord,
+  AdminRecordResult,
+  AdminAncestor,
+  AdminResourceCatalogEntry,
+  AdminMetrics,
+  AdminUserOverview,
+} from "../types/api";
 
 /**
  * ADMIN-only operations: user management and curriculum-job inspection.
@@ -76,5 +87,86 @@ export const adminService = {
       { params: status ? { status } : undefined }
     );
     return response.data.data?.jobs || [];
+  },
+
+  // ============ GOD panel: metrics command center ============
+  getMetrics: async (): Promise<AdminMetrics | undefined> => {
+    const response =
+      await api.get<JSendResponse<AdminMetrics>>("/admin/metrics");
+    return response.data.data;
+  },
+
+  getUserOverview: async (
+    userId: string
+  ): Promise<AdminUserOverview | undefined> => {
+    const response = await api.get<JSendResponse<AdminUserOverview>>(
+      `/admin/users/${userId}/overview`
+    );
+    return response.data.data;
+  },
+
+  // ============ GOD panel: generic CRUD over every collection ============
+  getCatalog: async (): Promise<AdminResourceCatalogEntry[]> => {
+    const response =
+      await api.get<JSendResponse<{ resources: AdminResourceCatalogEntry[] }>>(
+        "/admin/resources"
+      );
+    return response.data.data?.resources ?? [];
+  },
+
+  listResource: async (
+    resource: string,
+    params: Record<string, string> = {}
+  ): Promise<AdminListResult> => {
+    const response = await api.get<JSendResponse<AdminListResult>>(
+      `/admin/data/${resource}`,
+      { params }
+    );
+    return (
+      response.data.data ?? {
+        resource,
+        items: [],
+        pagination: { page: 1, perPage: 25, total: 0, pages: 0 },
+      }
+    );
+  },
+
+  getRecord: async (
+    resource: string,
+    id: string
+  ): Promise<AdminRecordResult | undefined> => {
+    const response = await api.get<
+      JSendResponse<{ item: AdminRecord; ancestors?: AdminAncestor[] }>
+    >(`/admin/data/${resource}/${id}`);
+    const data = response.data.data;
+    if (!data?.item) return undefined;
+    return { item: data.item, ancestors: data.ancestors ?? [] };
+  },
+
+  createRecord: async (
+    resource: string,
+    body: Record<string, unknown>
+  ): Promise<AdminRecord | undefined> => {
+    const response = await api.post<JSendResponse<{ item: AdminRecord }>>(
+      `/admin/data/${resource}`,
+      body
+    );
+    return response.data.data?.item;
+  },
+
+  updateRecord: async (
+    resource: string,
+    id: string,
+    body: Record<string, unknown>
+  ): Promise<AdminRecord | undefined> => {
+    const response = await api.patch<JSendResponse<{ item: AdminRecord }>>(
+      `/admin/data/${resource}/${id}`,
+      body
+    );
+    return response.data.data?.item;
+  },
+
+  deleteRecord: async (resource: string, id: string): Promise<void> => {
+    await api.delete(`/admin/data/${resource}/${id}`);
   },
 };

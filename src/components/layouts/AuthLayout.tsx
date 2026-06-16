@@ -20,7 +20,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
   const { isDark } = useTheme();
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0d1117]">
+    <div className="min-h-screen flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-[#0d1117]">
       <PageMeta title={title} />
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex justify-center mb-6">
@@ -41,7 +41,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="glass-panel py-8 px-4 shadow sm:rounded-2xl sm:px-10">
+        <div className="glass-panel py-8 px-4 rounded-xl sm:px-10">
           {children}
         </div>
         <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">

@@ -46,4 +46,9 @@ export const courseService = {
     if (!response.data.data) throw new Error("Failed to request more lessons");
     return response.data.data.job;
   },
+
+  // Delete an owned course and everything under it (lessons, challenges, etc.).
+  deleteCourse: async (courseId: string): Promise<void> => {
+    await api.delete(`/courses/${courseId}`);
+  },
 };

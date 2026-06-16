@@ -6,6 +6,24 @@ export interface JSendResponse<T> {
   details?: unknown;
 }
 
+export interface UserPreferences {
+  notifications: {
+    curriculumReady: boolean;
+    weeklyProgress: boolean;
+    productUpdates: boolean;
+  };
+  privacy: {
+    marketingEmails: boolean;
+    usageAnalytics: boolean;
+  };
+  // Chosen UI language + its layout direction. English/LTR is the default;
+  // `direction` is derived server-side from the language.
+  localization?: {
+    language: string;
+    direction: "ltr" | "rtl";
+  };
+}
+
 export interface User {
   id: string;
   email: string;
@@ -13,6 +31,7 @@ export interface User {
   profileData?: {
     name: string;
   };
+  preferences?: UserPreferences;
   stats?: {
     streakDays: number;
     totalXp: number;
@@ -91,15 +110,41 @@ export interface Course {
   };
 }
 
+// Generation lifecycle for a lazily-generated lesson. Missing = legacy READY.
+export type LessonGenerationStatus = "STUB" | "GENERATING" | "READY";
+
 export interface Lesson {
   id: string;
   title: string;
   orderIndex?: number;
   contentMarkdown?: string;
   courseId?: string;
+  // Lazy "generate on open": STUB lessons are materialized on first open.
+  status?: LessonGenerationStatus;
+  summary?: string;
   challenges?: Challenge[];
   nextLessonId?: string | null;
   prevLessonId?: string | null;
+}
+
+// On-demand lesson translation (POST /lessons/:id/translate). Only the prose
+// the student reads is translated; code, LaTeX, and answer keys are untouched
+// and merged back from the original challenge on the client.
+export interface LessonTranslationChallenge {
+  challengeId: string;
+  title?: string;
+  description?: string; // PROGRAMMING
+  problemLatex?: string; // MATH (prose translated, LaTeX preserved)
+  prompt?: string; // MCQ stem
+  options?: { id: string; text: string }[]; // MCQ option text
+}
+
+export interface LessonTranslationResult {
+  lessonId: string;
+  language: string;
+  title: string;
+  contentMarkdown: string;
+  challenges: LessonTranslationChallenge[];
 }
 
 // ──────────────────────────────────────────
@@ -277,6 +322,15 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+// The learner's current editor code, sent alongside a lesson-chat message so
+// the hint model can see their actual attempt. Not stored as part of the
+// message — it's ephemeral context for the AI only.
+export interface ChatCodeContext {
+  code: string;
+  language?: string;
+  challengeTitle?: string;
+}
+
 // An autonomous action the mentor took on the learner's behalf during a turn
 // (course/lesson creation or edit). Surfaced under the assistant message.
 export type MentorActionType =
@@ -327,5 +381,143 @@ export interface SyllabusResponse {
     orderIndex: number;
     title: string;
     status: "LOCKED" | "UNLOCKED" | "IN_PROGRESS" | "COMPLETED";
+    // STUB = not generated yet (will materialize when opened).
+    generationStatus?: LessonGenerationStatus;
   }[];
+}
+
+// ──────────────────────────────────────────
+// Admin — GOD panel (generic CRUD over every collection)
+// ──────────────────────────────────────────
+
+export type AdminRecord = Record<string, unknown>;
+
+export interface AdminListPagination {
+  page: number;
+  perPage: number;
+  total: number;
+  pages: number;
+}
+
+export interface AdminListResult {
+  resource: string;
+  label?: string;
+  items: AdminRecord[];
+  pagination: AdminListPagination;
+}
+
+/** One step in a record's drill-up breadcrumb (root → immediate parent). */
+export interface AdminAncestor {
+  resource: string;
+  id: string;
+  label: string;
+}
+
+export interface AdminRecordResult {
+  item: AdminRecord;
+  ancestors: AdminAncestor[];
+}
+
+export interface AdminResourceCatalogEntry {
+  key: string;
+  label: string;
+  count: number;
+  searchFields: string[];
+  filterFields: string[];
+  sortFields: string[];
+}
+
+export interface AdminCountBucket {
+  _id: string | null;
+  count: number;
+}
+
+export interface AdminSeriesPoint {
+  _id: string;
+  count: number;
+}
+
+export interface AdminMetrics {
+  totals: {
+    users: number;
+    courses: number;
+    lessons: number;
+    challenges: number;
+    submissions: number;
+    progress: number;
+    jobs: number;
+    threads: number;
+    messages: number;
+    actions: number;
+  };
+  breakdowns: {
+    usersByRole: AdminCountBucket[];
+    coursesByStatus: AdminCountBucket[];
+    coursesByDifficulty: AdminCountBucket[];
+    challengesByKind: AdminCountBucket[];
+    submissionsByStatus: AdminCountBucket[];
+    submissionsByKind: AdminCountBucket[];
+    jobsByStatus: AdminCountBucket[];
+    jobsByType: AdminCountBucket[];
+    threadsByScope: AdminCountBucket[];
+    actionsByType: AdminCountBucket[];
+  };
+  derived: {
+    completedProgress: number;
+    passedSubmissions: number;
+    submissionPassRate: number;
+    lessonCompletionRate: number;
+    newUsers7: number;
+    newCourses7: number;
+  };
+  series: {
+    users: AdminSeriesPoint[];
+    courses: AdminSeriesPoint[];
+    submissions: AdminSeriesPoint[];
+  };
+}
+
+export interface AdminOverviewChallenge {
+  _id: string;
+  title: string;
+  kind: string;
+}
+
+export interface AdminOverviewLesson {
+  _id: string;
+  title: string;
+  orderIndex?: number;
+  status?: string;
+  completed: boolean;
+  challenges: AdminOverviewChallenge[];
+}
+
+export interface AdminOverviewCourse {
+  _id: string;
+  title: string;
+  status?: string;
+  difficulty?: string;
+  createdAt?: string;
+  lessons: AdminOverviewLesson[];
+}
+
+export interface AdminUserOverview {
+  user: AdminRecord;
+  counts: {
+    courses: number;
+    lessons: number;
+    challenges: number;
+    submissions: number;
+    threads: number;
+    jobs: number;
+    actions: number;
+    progress: number;
+    completedLessons: number;
+    messages: number;
+  };
+  courses: AdminOverviewCourse[];
+  recentSubmissions: AdminRecord[];
+  threads: AdminRecord[];
+  actions: AdminRecord[];
+  jobs: AdminRecord[];
 }

@@ -3,6 +3,7 @@ import { Code2, Calculator, ListChecks, CheckCircle2 } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import { CHALLENGE_KINDS } from "../../../constants";
 import type { Challenge } from "../../../types/api";
+import { useLocale } from "../../../contexts/LocaleContext";
 
 interface ChallengeTabsProps {
   challenges: Challenge[];
@@ -27,6 +28,7 @@ const ChallengeTabs: React.FC<ChallengeTabsProps> = ({
   completed,
   onSelect,
 }) => {
+  const { t } = useLocale();
   return (
     <div className="flex items-center gap-1 overflow-x-auto px-3 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0d1117] flex-shrink-0">
       {challenges.map((ch, i) => {
@@ -55,7 +57,7 @@ const ChallengeTabs: React.FC<ChallengeTabsProps> = ({
             ) : (
               <Icon className="w-3.5 h-3.5" />
             )}
-            <span>Challenge {i + 1}</span>
+            <span>{t("Challenge {n}", { n: i + 1 })}</span>
           </button>
         );
       })}

@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import MainLayout from "../../components/layouts/MainLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
+import LearnNewThingButton from "../../components/ui/LearnNewThingButton";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLocale } from "../../contexts/LocaleContext";
 import api from "../../services/api";
 import type { JSendResponse, DashboardResponse, Course } from "../../types/api";
 import { courseService } from "../../services/courseService";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLocale();
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +40,7 @@ const Dashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <MainLayout title="Dashboard">
+      <MainLayout title={t("Dashboard")}>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
@@ -47,38 +50,39 @@ const Dashboard: React.FC = () => {
 
   const stats = data?.stats || user?.stats;
 
+  const learnerName = data?.user.name || user?.profileData?.name || "";
+  const [welcomeBefore, welcomeAfter] = t("Welcome back, {name}!").split(
+    "{name}"
+  );
+
   return (
-    <MainLayout title="Dashboard">
+    <MainLayout title={t("Dashboard")}>
       <div className="space-y-8">
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Welcome back,{" "}
-              <span className="text-gradient">
-                {data?.user.name || user?.profileData?.name}
-              </span>
-              !
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+              {welcomeBefore}
+              <span className="text-gradient">{learnerName}</span>
+              {welcomeAfter}
             </h1>
             <p className="mt-1 text-gray-500 dark:text-gray-400">
-              Ready to continue your learning journey?
+              {t("Ready to continue your learning journey?")}
             </p>
           </div>
-          <div className="mt-4 md:mt-0 flex gap-2">
-            <Link to="/onboarding">
-              <Button>Start learning</Button>
-            </Link>
+          <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
+            <LearnNewThingButton />
             <Link to="/mentor">
-              <Button variant="outline">Talk to your Mentor</Button>
+              <Button variant="outline">{t("Talk to your Mentor")}</Button>
             </Link>
           </div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-indigo-50 border-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/20">
+          <Card>
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg text-indigo-600 dark:text-indigo-400">
+              <div className="icon-tile h-12 w-12">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -95,18 +99,18 @@ const Dashboard: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Current Streak
+                  {t("Current Streak")}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {stats?.streakDays || 0} Days
+                  {t("{count} Days", { count: stats?.streakDays || 0 })}
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-violet-50 border-violet-100 dark:bg-violet-500/10 dark:border-violet-500/20">
+          <Card>
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-violet-100 dark:bg-violet-500/20 rounded-lg text-violet-600 dark:text-violet-400">
+              <div className="icon-tile h-12 w-12">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -123,18 +127,18 @@ const Dashboard: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Total XP
+                  {t("Total XP")}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {stats?.totalXp || 0} XP
+                  {t("{count} XP", { count: stats?.totalXp || 0 })}
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20">
+          <Card>
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400">
+              <div className="icon-tile h-12 w-12">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -151,7 +155,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Lessons Completed
+                  {t("Lessons Completed")}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {stats?.lessonsCompleted || 0}
@@ -165,7 +169,7 @@ const Dashboard: React.FC = () => {
         {data?.quickResume ? (
           <div className="mt-8">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Jump Back In
+              {t("Jump Back In")}
             </h2>
             <Card className="hover:border-indigo-200 dark:hover:border-indigo-500/30 cursor-pointer group">
               <Link
@@ -180,9 +184,9 @@ const Dashboard: React.FC = () => {
                     {data.quickResume.lessonTitle}
                   </h3>
                 </div>
-                <div className="bg-indigo-50 dark:bg-indigo-500/20 p-2 rounded-full group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/30 transition-colors">
+                <div className="icon-tile h-10 w-10 transition-colors">
                   <svg
-                    className="w-6 h-6 text-indigo-600 dark:text-indigo-400"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -208,18 +212,17 @@ const Dashboard: React.FC = () => {
           <div className="mt-8">
             <Card className="text-center py-8">
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                No courses in progress
+                {t("No courses in progress")}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Answer a few quick questions and we'll build a personalized
-                course just for you.
+                {t(
+                  "Answer a few quick questions and we'll build a personalized course just for you."
+                )}
               </p>
-              <div className="flex justify-center gap-2">
-                <Link to="/onboarding">
-                  <Button variant="primary">Start your first course</Button>
-                </Link>
+              <div className="flex flex-wrap justify-center gap-2">
+                <LearnNewThingButton />
                 <Link to="/mentor">
-                  <Button variant="outline">Talk to your Mentor</Button>
+                  <Button variant="outline">{t("Talk to your Mentor")}</Button>
                 </Link>
               </div>
             </Card>
@@ -229,7 +232,7 @@ const Dashboard: React.FC = () => {
         {/* My Courses */}
         <div className="mt-8">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            My Courses
+            {t("My Courses")}
           </h2>
           {courses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -243,10 +246,13 @@ const Dashboard: React.FC = () => {
                       {course.title}
                     </h3>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {course.meta.lessonCount} Lessons ·{" "}
+                      {t("{count} Lessons", {
+                        count: course.meta.lessonCount,
+                      })}{" "}
+                      ·{" "}
                       {course.status === "READY"
-                        ? `${course.difficulty.toLowerCase()}`
-                        : course.status.toLowerCase()}
+                        ? t(course.difficulty.toLowerCase())
+                        : t(course.status.toLowerCase())}
                     </div>
                   </div>
 
@@ -258,8 +264,8 @@ const Dashboard: React.FC = () => {
                       disabled={course.status !== "READY"}
                     >
                       {course.status === "READY"
-                        ? "Continue Learning"
-                        : "Generating…"}
+                        ? t("Continue Learning")
+                        : t("Generating…")}
                     </Button>
                   </Link>
                 </Card>
@@ -267,12 +273,8 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             <div className="text-gray-500 dark:text-gray-400">
-              <p className="mb-3">You don't have any courses yet.</p>
-              <Link to="/onboarding">
-                <Button variant="primary" size="sm">
-                  Start learning
-                </Button>
-              </Link>
+              <p className="mb-3">{t("You don't have any courses yet.")}</p>
+              <LearnNewThingButton size="sm" />
             </div>
           )}
         </div>

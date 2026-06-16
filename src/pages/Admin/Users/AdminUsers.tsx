@@ -5,8 +5,10 @@ import Badge from "../../../components/ui/Badge";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { adminService, type AdminUser } from "../../../services/adminService";
+import { useLocale } from "../../../contexts/LocaleContext";
 
 const AdminUsers: React.FC = () => {
+  const { t } = useLocale();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,7 +40,9 @@ const AdminUsers: React.FC = () => {
   const handleDelete = async (userId: string) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this user? This action cannot be undone."
+        t(
+          "Are you sure you want to delete this user? This action cannot be undone."
+        )
       )
     ) {
       return;
@@ -49,7 +53,7 @@ const AdminUsers: React.FC = () => {
       setUsers(users.filter((u) => (u._id || u.id) !== userId));
     } catch (error) {
       console.error("Failed to delete user:", error);
-      alert("Failed to delete user");
+      alert(t("Failed to delete user"));
     }
   };
 
@@ -74,7 +78,7 @@ const AdminUsers: React.FC = () => {
       setEditingUser(null);
     } catch (error) {
       console.error("Failed to update user:", error);
-      alert("Failed to update user");
+      alert(t("Failed to update user"));
     }
   };
 
@@ -89,14 +93,14 @@ const AdminUsers: React.FC = () => {
   }
 
   return (
-    <AdminLayout title="Users">
+    <AdminLayout title={t("Users")}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Users
+            {t("Users")}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Manage platform users and roles
+            {t("Manage platform users and roles")}
           </p>
         </div>
 
@@ -104,10 +108,10 @@ const AdminUsers: React.FC = () => {
         <Card>
           <div className="flex gap-4">
             <Input
-              placeholder="Search by name or email..."
+              placeholder={t("Search by name or email...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-md"
+              className="w-full sm:max-w-md"
             />
           </div>
         </Card>
@@ -115,18 +119,18 @@ const AdminUsers: React.FC = () => {
         {filteredUsers.length === 0 ? (
           <Card>
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-              No users found matching your search.
+              {t("No users found matching your search.")}
             </p>
           </Card>
         ) : (
           <div className="grid gap-4">
             {filteredUsers.map((user) => (
               <Card key={user._id || user.id}>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
+                <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                        {user.profileData?.name || "Unknown User"}
+                        {user.profileData?.name || t("Unknown User")}
                       </h3>
                       <Badge
                         variant={user.role === "ADMIN" ? "error" : "default"}
@@ -138,20 +142,28 @@ const AdminUsers: React.FC = () => {
                       {user.email}
                     </p>
                     {user.stats && (
-                      <div className="mt-2 flex gap-4 text-sm text-gray-500 dark:text-gray-400">
-                        <span>XP: {user.stats.totalXp}</span>
-                        <span>Streak: {user.stats.streakDays} days</span>
-                        <span>Lessons: {user.stats.lessonsCompleted}</span>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                        <span>{t("XP: {xp}", { xp: user.stats.totalXp })}</span>
+                        <span>
+                          {t("Streak: {days} days", {
+                            days: user.stats.streakDays,
+                          })}
+                        </span>
+                        <span>
+                          {t("Lessons: {count}", {
+                            count: user.stats.lessonsCompleted,
+                          })}
+                        </span>
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setEditingUser(user)}
                     >
-                      Edit
+                      {t("Edit")}
                     </Button>
                     <Button
                       size="sm"
@@ -159,7 +171,7 @@ const AdminUsers: React.FC = () => {
                       className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                       onClick={() => handleDelete(user._id || user.id)}
                     >
-                      Delete
+                      {t("Delete")}
                     </Button>
                   </div>
                 </div>
@@ -171,14 +183,14 @@ const AdminUsers: React.FC = () => {
         {/* Edit User Modal */}
         {editingUser && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-[#161b22] rounded-lg max-w-md w-full p-6">
+            <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 shadow-sm rounded-xl max-w-md w-full p-6">
               <h2 className="text-xl font-bold mb-4 dark:text-gray-100">
-                Edit User
+                {t("Edit User")}
               </h2>
               <form onSubmit={handleUpdateUser} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Name
+                    {t("Name")}
                   </label>
                   <Input
                     value={editingUser.profileData?.name || ""}
@@ -195,10 +207,10 @@ const AdminUsers: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Role
+                    {t("Role")}
                   </label>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-800/50 dark:text-gray-100"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 bg-white dark:bg-[#0d1117] dark:text-gray-100"
                     value={editingUser.role}
                     onChange={(e) =>
                       setEditingUser({
@@ -207,8 +219,8 @@ const AdminUsers: React.FC = () => {
                       })
                     }
                   >
-                    <option value="STUDENT">Student</option>
-                    <option value="ADMIN">Admin</option>
+                    <option value="STUDENT">{t("Student")}</option>
+                    <option value="ADMIN">{t("Admin")}</option>
                   </select>
                 </div>
                 <div className="flex gap-3 justify-end mt-6">
@@ -217,9 +229,9 @@ const AdminUsers: React.FC = () => {
                     variant="ghost"
                     onClick={() => setEditingUser(null)}
                   >
-                    Cancel
+                    {t("Cancel")}
                   </Button>
-                  <Button type="submit">Save Changes</Button>
+                  <Button type="submit">{t("Save Changes")}</Button>
                 </div>
               </form>
             </div>

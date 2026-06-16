@@ -4,12 +4,16 @@ import AuthLayout from "../../components/layouts/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLocale } from "../../contexts/LocaleContext";
 import api from "../../services/api";
+import { guestChatService } from "../../services/guestChatService";
+import { ROUTES } from "../../constants/routes";
 import type { JSendResponse, AuthResponse } from "../../types/api";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useLocale();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -31,10 +35,14 @@ const Login: React.FC = () => {
       if (response.data.success && response.data.data) {
         const { token, user } = response.data.data;
         login(token, user);
-        navigate("/dashboard");
+        // If they were mid-conversation as a guest, carry it over.
+        const threadId = await guestChatService.importIfPending();
+        navigate(
+          threadId ? `${ROUTES.MENTOR}?thread=${threadId}` : ROUTES.DASHBOARD
+        );
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to login");
+      setError(err instanceof Error ? err.message : t("Failed to login"));
     } finally {
       setIsLoading(false);
     }
@@ -42,16 +50,16 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to your account to continue learning"
+      title={t("Welcome back")}
+      subtitle={t("Sign in to your account to continue learning")}
     >
       <form className="space-y-6" onSubmit={handleSubmit}>
         {error && (
           <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 border border-red-100 dark:border-red-800">
             <div className="flex">
-              <div className="ml-3">
+              <div className="ms-3">
                 <h3 className="text-sm font-medium text-red-800 dark:text-red-400">
-                  Login failed
+                  {t("Login failed")}
                 </h3>
                 <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                   <p>{error}</p>
@@ -63,7 +71,7 @@ const Login: React.FC = () => {
 
         <Input
           id="email"
-          label="Email address"
+          label={t("Email address")}
           type="email"
           required
           autoComplete="email"
@@ -74,7 +82,7 @@ const Login: React.FC = () => {
 
         <Input
           id="password"
-          label="Password"
+          label={t("Password")}
           type="password"
           required
           autoComplete="current-password"
@@ -91,14 +99,14 @@ const Login: React.FC = () => {
               href="#"
               className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
-              Forgot your password?
+              {t("Forgot your password?")}
             </a>
           </div>
         </div>
 
         <div>
           <Button type="submit" className="w-full" isLoading={isLoading}>
-            Sign in
+            {t("Sign in")}
           </Button>
         </div>
       </form>
@@ -109,8 +117,8 @@ const Login: React.FC = () => {
             <div className="w-full border-t border-gray-300 dark:border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white dark:bg-white/5 px-2 text-gray-500 dark:text-gray-400">
-              New to SigmaLoop?
+            <span className="bg-white dark:bg-[#161b22] px-2 text-gray-500 dark:text-gray-400">
+              {t("New to SigmaLoop?")}
             </span>
           </div>
         </div>
@@ -118,7 +126,7 @@ const Login: React.FC = () => {
         <div className="mt-6">
           <Link to="/register">
             <Button variant="secondary" className="w-full">
-              Create an account
+              {t("Create an account")}
             </Button>
           </Link>
         </div>

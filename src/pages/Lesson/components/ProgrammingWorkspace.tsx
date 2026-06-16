@@ -6,10 +6,11 @@ import {
 } from "react-resizable-panels";
 import CodeEditor from "./CodeEditor";
 import OutputPanel from "./OutputPanel";
-import { Play, Send, Trophy } from "lucide-react";
+import { Play, Trophy } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import { lessonService } from "../../../services/lessonService";
 import { type ExecutionResult } from "../../../types/api";
+import { useLocale } from "../../../contexts/LocaleContext";
 
 interface ProgrammingWorkspaceProps {
   initialCode: string;
@@ -32,6 +33,7 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
   onLanguageChange,
   onCompleted,
 }) => {
+  const { t } = useLocale();
   // Load saved code from localStorage, fall back to initialCode
   const storageKey = `sigmaloop_code_${challengeId}_${language}`;
 
@@ -60,31 +62,9 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
     setCode(saved !== null ? saved : initialCode);
   }, [storageKey, initialCode]);
 
+  // Single action: run the code against all test cases and, when everything
+  // passes, mark the challenge (and the lesson, if it was the last one) done.
   const handleRun = async () => {
-    setIsLoading(true);
-    setExecutionResult(null);
-    try {
-      const result = await lessonService.runCode({
-        challengeId,
-        code,
-        language,
-      });
-      setExecutionResult(result);
-    } catch (error) {
-      console.error("Execution error:", error);
-      setExecutionResult({
-        status: "ERROR",
-        stdout: "",
-        stderr:
-          error instanceof Error ? error.message : "Unknown error occurred",
-        metrics: { runtime: "0s" },
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = async () => {
     setIsLoading(true);
     setExecutionResult(null);
     try {
@@ -102,7 +82,7 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
         onCompleted?.();
       }
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Execution error:", error);
       setExecutionResult({
         status: "ERROR",
         stdout: "",
@@ -116,7 +96,7 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-[#161b22] border-l border-gray-200 dark:border-gray-800">
+    <div className="flex flex-col h-full bg-white dark:bg-[#161b22] border-s border-gray-200 dark:border-gray-800">
       {/* Toolkit / Header */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161b22] shadow-sm z-10">
         <div className="flex items-center gap-2">
@@ -124,7 +104,7 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
             <select
               value={language}
               onChange={(e) => onLanguageChange?.(e.target.value)}
-              className="text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize"
+              className="text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-md px-2 py-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize"
             >
               {availableLanguages.map((lang) => (
                 <option key={lang} value={lang}>
@@ -133,30 +113,20 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
               ))}
             </select>
           ) : (
-            <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded capitalize">
+            <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md capitalize">
               {language}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
             size="sm"
             onClick={handleRun}
             disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <Play className="w-4 h-4" />
-            Run
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleSubmit}
-            disabled={isLoading}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
           >
-            <Send className="w-4 h-4" />
-            Submit
+            <Play className="w-4 h-4" />
+            {t("Run")}
           </Button>
         </div>
       </div>
@@ -166,7 +136,7 @@ const ProgrammingWorkspace: React.FC<ProgrammingWorkspaceProps> = ({
         <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/30 border-b border-green-200 dark:border-green-800 animate-pulse">
           <Trophy className="w-5 h-5 text-green-600 dark:text-green-400" />
           <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-            Lesson Complete! +50 XP
+            {t("Lesson Complete! +50 XP")}
           </span>
         </div>
       )}

@@ -3,6 +3,7 @@ import type {
   JSendResponse,
   ChatThread,
   ChatMessage,
+  ChatCodeContext,
   SendMessageResponse,
 } from "../types/api";
 
@@ -49,11 +50,20 @@ export const chatService = {
 
   sendMessage: async (
     threadId: string,
-    content: string
+    content: string,
+    codeContext?: ChatCodeContext | null
   ): Promise<SendMessageResponse> => {
+    const code = codeContext?.code?.trim() ? codeContext : null;
     const response = await api.post<JSendResponse<SendMessageResponse>>(
       `/chat/threads/${threadId}/messages`,
-      { content }
+      {
+        content,
+        ...(code && {
+          code: code.code,
+          ...(code.language && { language: code.language }),
+          ...(code.challengeTitle && { challengeTitle: code.challengeTitle }),
+        }),
+      }
     );
     if (!response.data.data) {
       throw new Error("Failed to send message");
@@ -63,6 +73,21 @@ export const chatService = {
 
   deleteThread: async (threadId: string): Promise<void> => {
     await api.delete(`/chat/threads/${threadId}`);
+  },
+
+  // Seed a real thread from a guest transcript after the visitor signs up.
+  // POST /chat/threads/import — bulk-inserts the messages without re-running AI.
+  importGuestThread: async (
+    messages: { role: "USER" | "ASSISTANT"; content: string }[]
+  ): Promise<ChatThread> => {
+    const response = await api.post<JSendResponse<ChatThread>>(
+      "/chat/threads/import",
+      { messages }
+    );
+    if (!response.data.data) {
+      throw new Error("Failed to import conversation");
+    }
+    return response.data.data;
   },
 
   updateThread: async (

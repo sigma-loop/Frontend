@@ -4,12 +4,16 @@ import AuthLayout from "../../components/layouts/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLocale } from "../../contexts/LocaleContext";
 import api from "../../services/api";
+import { guestChatService } from "../../services/guestChatService";
+import { ROUTES } from "../../constants/routes";
 import type { JSendResponse, AuthResponse } from "../../types/api";
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useLocale();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,7 +28,7 @@ const Register: React.FC = () => {
     setError(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match");
+      setError(t("Passwords don't match"));
       return;
     }
 
@@ -43,10 +47,14 @@ const Register: React.FC = () => {
       if (response.data.success && response.data.data) {
         const { token, user } = response.data.data;
         login(token, user);
-        navigate("/dashboard");
+        // Carry over a guest mentor conversation, if any, then land them there.
+        const threadId = await guestChatService.importIfPending();
+        navigate(
+          threadId ? `${ROUTES.MENTOR}?thread=${threadId}` : ROUTES.DASHBOARD
+        );
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to register");
+      setError(err instanceof Error ? err.message : t("Failed to register"));
     } finally {
       setIsLoading(false);
     }
@@ -54,16 +62,16 @@ const Register: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Create an account"
-      subtitle="Start your journey with SigmaLoop today"
+      title={t("Create an account")}
+      subtitle={t("Start your journey with SigmaLoop today")}
     >
       <form className="space-y-6" onSubmit={handleSubmit}>
         {error && (
           <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 border border-red-100 dark:border-red-800">
             <div className="flex">
-              <div className="ml-3">
+              <div className="ms-3">
                 <h3 className="text-sm font-medium text-red-800 dark:text-red-400">
-                  Registration failed
+                  {t("Registration failed")}
                 </h3>
                 <div className="mt-2 text-sm text-red-700 dark:text-red-300">
                   <p>{error}</p>
@@ -75,7 +83,7 @@ const Register: React.FC = () => {
 
         <Input
           id="name"
-          label="Full Name"
+          label={t("Full Name")}
           type="text"
           required
           autoComplete="name"
@@ -86,7 +94,7 @@ const Register: React.FC = () => {
 
         <Input
           id="email"
-          label="Email address"
+          label={t("Email address")}
           type="email"
           required
           autoComplete="email"
@@ -97,7 +105,7 @@ const Register: React.FC = () => {
 
         <Input
           id="password"
-          label="Password"
+          label={t("Password")}
           type="password"
           required
           autoComplete="new-password"
@@ -110,7 +118,7 @@ const Register: React.FC = () => {
 
         <Input
           id="confirmPassword"
-          label="Confirm Password"
+          label={t("Confirm Password")}
           type="password"
           required
           autoComplete="new-password"
@@ -123,7 +131,7 @@ const Register: React.FC = () => {
 
         <div>
           <Button type="submit" className="w-full" isLoading={isLoading}>
-            Create account
+            {t("Create account")}
           </Button>
         </div>
       </form>
@@ -134,8 +142,8 @@ const Register: React.FC = () => {
             <div className="w-full border-t border-gray-300 dark:border-gray-700" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white dark:bg-white/5 px-2 text-gray-500 dark:text-gray-400">
-              Already have an account?
+            <span className="bg-white dark:bg-[#161b22] px-2 text-gray-500 dark:text-gray-400">
+              {t("Already have an account?")}
             </span>
           </div>
         </div>
@@ -143,7 +151,7 @@ const Register: React.FC = () => {
         <div className="mt-6">
           <Link to="/login">
             <Button variant="secondary" className="w-full">
-              Sign in
+              {t("Sign in")}
             </Button>
           </Link>
         </div>

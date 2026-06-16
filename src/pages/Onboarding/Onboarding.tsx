@@ -16,7 +16,11 @@ import { ROUTES, buildRoute } from "../../constants/routes";
 import { TOPIC_LIBRARY } from "../../constants/topicLibrary";
 import { questionnaireService } from "../../services/questionnaireService";
 import { useCurriculumJob } from "../../hooks/useCurriculumJob";
-import type { QuestionnaireQuestion, QuestionnaireGoals } from "../../types/api";
+import { useLocale } from "../../contexts/LocaleContext";
+import type {
+  QuestionnaireQuestion,
+  QuestionnaireGoals,
+} from "../../types/api";
 
 type Step = "topics" | "questions" | "review" | "generating";
 
@@ -29,6 +33,7 @@ const STEP_LABELS: Record<Step, string> = {
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const { t } = useLocale();
 
   const [step, setStep] = useState<Step>("topics");
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
@@ -92,7 +97,7 @@ const Onboarding = () => {
       setFollowUps(res.questions ?? []);
       setStep("questions");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load questions");
+      setError(e instanceof Error ? e.message : t("Failed to load questions"));
     } finally {
       setIsLoadingQuestions(false);
     }
@@ -118,7 +123,9 @@ const Onboarding = () => {
       setJobId(createdJob.id);
       setStep("generating");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to start generation");
+      setError(
+        e instanceof Error ? e.message : t("Failed to start generation")
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -135,8 +142,8 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen w-full bg-gray-50 dark:bg-[#0d1117] text-gray-900 dark:text-gray-100 flex flex-col">
       <PageMeta
-        title="Start learning"
-        description="Tell SigmaLoop what you want to learn"
+        title={t("Start learning")}
+        description={t("Tell SigmaLoop what you want to learn")}
       />
 
       {/* Header */}
@@ -147,7 +154,8 @@ const Onboarding = () => {
         >
           <Home className="w-5 h-5" />
         </Link>
-        <div className="flex items-center gap-2 text-sm">
+        {/* Full breadcrumb on larger screens */}
+        <div className="hidden sm:flex items-center gap-2 text-sm">
           {(Object.keys(STEP_LABELS) as Step[]).map((s, i) => (
             <span key={s} className="flex items-center gap-2">
               <span
@@ -158,11 +166,25 @@ const Onboarding = () => {
                     : "text-gray-400 dark:text-gray-600"
                 )}
               >
-                {STEP_LABELS[s]}
+                {t(STEP_LABELS[s])}
               </span>
-              {i < 3 && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
+              {i < 3 && (
+                <ChevronRight className="w-3.5 h-3.5 text-gray-300 rtl:rotate-180" />
+              )}
             </span>
           ))}
+        </div>
+        {/* Compact step indicator on mobile */}
+        <div className="sm:hidden text-sm font-medium text-indigo-600 dark:text-indigo-400">
+          {t(STEP_LABELS[step])}
+          <span className="text-gray-400 dark:text-gray-600">
+            {" "}
+            ·{" "}
+            {t("{current}/{total}", {
+              current: (Object.keys(STEP_LABELS) as Step[]).indexOf(step) + 1,
+              total: 4,
+            })}
+          </span>
         </div>
         <div className="w-8" />
       </header>
@@ -181,31 +203,30 @@ const Onboarding = () => {
             <div className="space-y-8">
               <div>
                 <h1 className="text-2xl font-bold mb-1">
-                  What do you want to learn?
+                  {t("What do you want to learn?")}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Pick the topics you're interested in. We'll tailor a course
-                  just for you.
+                  {t(
+                    "Pick the topics you're interested in. We'll tailor a course just for you."
+                  )}
                 </p>
               </div>
 
               {TOPIC_LIBRARY.map((cat) => (
                 <div key={cat.id}>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                    {cat.label}
-                  </h2>
+                  <h2 className="eyebrow mb-1">{t(cat.label)}</h2>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-                    {cat.blurb}
+                    {t(cat.blurb)}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {cat.topics.map((t) => (
+                    {cat.topics.map((topic) => (
                       <button
-                        key={t.id}
+                        key={topic.id}
                         type="button"
-                        onClick={() => toggleTopic(t.id)}
-                        className={chip(selectedTopics.has(t.id))}
+                        onClick={() => toggleTopic(topic.id)}
+                        className={chip(selectedTopics.has(topic.id))}
                       >
-                        {t.label}
+                        {t(topic.label)}
                       </button>
                     ))}
                   </div>
@@ -221,12 +242,12 @@ const Onboarding = () => {
                   {isLoadingQuestions ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Tailoring…
+                      {t("Tailoring…")}
                     </>
                   ) : (
                     <>
-                      Next
-                      <ChevronRight className="w-4 h-4" />
+                      {t("Next")}
+                      <ChevronRight className="w-4 h-4 rtl:rotate-180" />
                     </>
                   )}
                 </Button>
@@ -238,9 +259,11 @@ const Onboarding = () => {
           {step === "questions" && (
             <div className="space-y-8">
               <div>
-                <h1 className="text-2xl font-bold mb-1">A few quick questions</h1>
+                <h1 className="text-2xl font-bold mb-1">
+                  {t("A few quick questions")}
+                </h1>
                 <p className="text-gray-500 dark:text-gray-400">
-                  These help us match the course to your level and goals.
+                  {t("These help us match the course to your level and goals.")}
                 </p>
               </div>
 
@@ -252,8 +275,8 @@ const Onboarding = () => {
                       value={(answers[q.id] ?? [])[0] ?? ""}
                       onChange={(e) => setSingle(q.id, e.target.value)}
                       rows={3}
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#161b22] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="Type your answer…"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#161b22] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder={t("Type your answer…")}
                     />
                   ) : (
                     <div className="flex flex-wrap gap-2">
@@ -281,14 +304,16 @@ const Onboarding = () => {
 
               <div>
                 <h3 className="font-semibold mb-3">
-                  Anything else? (optional)
+                  {t("Anything else? (optional)")}
                 </h3>
                 <textarea
                   value={freeText}
                   onChange={(e) => setFreeText(e.target.value)}
                   rows={3}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#161b22] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="e.g. I'm preparing for interviews and prefer hands-on practice."
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#161b22] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder={t(
+                    "e.g. I'm preparing for interviews and prefer hands-on practice."
+                  )}
                 />
               </div>
 
@@ -298,15 +323,15 @@ const Onboarding = () => {
                   onClick={() => setStep("topics")}
                   className="flex items-center gap-2"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Back
+                  <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
+                  {t("Back")}
                 </Button>
                 <Button
                   onClick={() => setStep("review")}
                   className="flex items-center gap-2"
                 >
-                  Review
-                  <ChevronRight className="w-4 h-4" />
+                  {t("Review")}
+                  <ChevronRight className="w-4 h-4 rtl:rotate-180" />
                 </Button>
               </div>
             </div>
@@ -316,17 +341,17 @@ const Onboarding = () => {
           {step === "review" && (
             <div className="space-y-8">
               <div>
-                <h1 className="text-2xl font-bold mb-1">Ready to build</h1>
+                <h1 className="text-2xl font-bold mb-1">
+                  {t("Ready to build")}
+                </h1>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Here's what we'll base your personalized course on.
+                  {t("Here's what we'll base your personalized course on.")}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161b22] p-5 space-y-4">
+              <div className="glass-panel rounded-xl p-5 space-y-4">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                    Topics
-                  </h3>
+                  <h3 className="eyebrow mb-2">{t("Topics")}</h3>
                   <div className="flex flex-wrap gap-2">
                     {goals.topics.map((t) => (
                       <span
@@ -340,9 +365,7 @@ const Onboarding = () => {
                 </div>
                 {goals.followups.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                      Your answers
-                    </h3>
+                    <h3 className="eyebrow mb-2">{t("Your answers")}</h3>
                     <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
                       {goals.followups.map((f, i) => (
                         <li key={i}>
@@ -357,9 +380,7 @@ const Onboarding = () => {
                 )}
                 {goals.freeText && (
                   <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                      Notes
-                    </h3>
+                    <h3 className="eyebrow mb-2">{t("Notes")}</h3>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       {goals.freeText}
                     </p>
@@ -373,8 +394,8 @@ const Onboarding = () => {
                   onClick={() => setStep("questions")}
                   className="flex items-center gap-2"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Back
+                  <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
+                  {t("Back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -382,7 +403,7 @@ const Onboarding = () => {
                   className="flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  {isSubmitting ? "Starting…" : "Generate my course"}
+                  {isSubmitting ? t("Starting…") : t("Generate my course")}
                 </Button>
               </div>
             </div>
@@ -395,11 +416,10 @@ const Onboarding = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400">
                     <AlertTriangle className="w-4 h-4" />
-                    {jobError ||
-                      "Generation failed. Please try again."}
+                    {jobError || t("Generation failed. Please try again.")}
                   </div>
                   <Button variant="outline" onClick={() => setStep("review")}>
-                    Try again
+                    {t("Try again")}
                   </Button>
                 </div>
               ) : (
@@ -408,11 +428,12 @@ const Onboarding = () => {
                     <Sparkles className="w-6 h-6 text-indigo-500 animate-pulse" />
                     <div>
                       <h1 className="text-2xl font-bold">
-                        Building your course…
+                        {t("Building your course…")}
                       </h1>
                       <p className="text-gray-500 dark:text-gray-400">
-                        This takes a moment. You'll be taken there
-                        automatically when it's ready.
+                        {t(
+                          "This takes a moment. You'll be taken there automatically when it's ready."
+                        )}
                       </p>
                     </div>
                   </div>
