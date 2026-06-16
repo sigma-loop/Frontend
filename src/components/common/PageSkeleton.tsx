@@ -1,12 +1,10 @@
 import React from "react";
 
 /**
- * Generic, content-shaped loading skeleton shown in place of page content
- * while the UI is being translated into a newly chosen language (see
- * MainLayout + LocaleContext.isSwitchingLanguage). The surrounding layout
- * (Navbar / Footer) stays put — only the content is masked — so switching
- * language reads as an Instagram-style "hide content, keep the frame" load
- * instead of a flash of half-translated text.
+ * Generic, content-shaped loading skeleton used inside TranslationLoadingScreen
+ * while the page being viewed/navigated-to is translated into the chosen
+ * language (see LocaleContext.isPageLoading). It reads as an Instagram-style
+ * "hide content, show the frame" load instead of a flash of untranslated text.
  */
 const Bar: React.FC<{ className?: string }> = ({ className = "" }) => (
   <div className={`rounded bg-gray-200 dark:bg-gray-800 ${className}`} />

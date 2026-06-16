@@ -2,10 +2,13 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   useCallback,
 } from "react";
 import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useAuth } from "./AuthContext";
 import { i18nService } from "../services/i18nService";
@@ -30,12 +33,13 @@ interface LocaleContextType {
   /** True while ANY batch of UI strings is being translated (on-demand). */
   isTranslating: boolean;
   /**
-   * True only while switching INTO a language (the initial bulk translation of
-   * the current page) — drives the full-page loading skeleton. Stays false for
-   * the small incremental fetches that happen as new strings appear on
-   * navigation, so we don't blank the page on every minor update.
+   * True while the page the user is ON (or just navigated TO) is being
+   * translated for the first time in the current language — drives the
+   * full-screen loading skeleton. Fires on a language switch AND on navigating
+   * to a route whose strings aren't translated yet. Stays false for the small
+   * incremental top-ups (e.g. async-loaded data) once the page is up.
    */
-  isSwitchingLanguage: boolean;
+  isPageLoading: boolean;
   setLanguage: (code: string) => void;
   /**
    * Translate a UI string. The English source IS the key — pass the literal.
@@ -57,17 +61,23 @@ export const LocaleProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const [language, setLanguageState, removeLanguage] = useLocalStorage<string>(
     "locale",
     DEFAULT_LOCALE
   );
   const [map, setMap] = useState<Record<string, string>>({});
   const [isTranslating, setIsTranslating] = useState(false);
-  // Start in the "switching" state when a non-English language is already
-  // persisted, so the very first paint is the skeleton (not a flash of English).
-  const [isSwitchingLanguage, setIsSwitchingLanguage] = useState(
+  // Start in the loading state when a non-English language is already persisted,
+  // so the very first paint is the skeleton (not a flash of English).
+  const [isPageLoading, setIsPageLoading] = useState(
     () => language !== DEFAULT_LOCALE
   );
+
+  // Strings already translated (or attempted) for the CURRENT language. Persists
+  // across navigation so we never re-translate, and is reset on language change.
+  const translatedRef = useRef<Record<string, string>>({});
+  const prevLangRef = useRef(language);
 
   const direction = getLocaleDir(language);
 
@@ -97,61 +107,66 @@ export const LocaleProvider: React.FC<{ children: ReactNode }> = ({
     root.dir = getLocaleDir(language);
   }, [language]);
 
-  // Translate every registered string still missing for the current language,
-  // in batches. Re-runs on language change and whenever new strings are
-  // discovered (navigation) via the registry subscription.
-  useEffect(() => {
-    if (language === DEFAULT_LOCALE) {
+  // Translate the current page on a language switch AND on every navigation.
+  // useLayoutEffect runs before paint, so when the route we land on has
+  // untranslated strings we flip the skeleton ON before any English shows; once
+  // its strings are fetched we flip it OFF and reveal the translated page.
+  // Later-appearing strings (async-loaded data) top up via the slim bar instead.
+  useLayoutEffect(() => {
+    // Language changed → drop the previous language's translations entirely.
+    if (prevLangRef.current !== language) {
+      prevLangRef.current = language;
+      translatedRef.current = {};
       setMap({});
+    }
+
+    if (language === DEFAULT_LOCALE) {
+      setIsPageLoading(false);
       setIsTranslating(false);
-      setIsSwitchingLanguage(false);
       return;
     }
 
     let cancelled = false;
-    const fetched: Record<string, string> = {};
     let timer: number | undefined;
-    // The first batch is the bulk translation of the current page — that's the
-    // one that shows the skeleton; later batches are incremental top-ups.
-    let firstBatch = true;
 
-    const fetchMissing = async () => {
-      const missing = getAllStrings().filter((s) => !(s in fetched));
+    // `initial` = the navigation/switch batch that drives the full skeleton.
+    // Follow-up batches (new strings discovered later) only nudge the top bar.
+    const run = async (initial: boolean) => {
+      const missing = getAllStrings().filter(
+        (s) => !(s in translatedRef.current)
+      );
       if (missing.length === 0) {
-        if (firstBatch && !cancelled) {
-          firstBatch = false;
-          setIsSwitchingLanguage(false);
-        }
+        if (initial && !cancelled) setIsPageLoading(false);
         return;
       }
-      setIsTranslating(true);
+      if (initial) setIsPageLoading(true);
+      else setIsTranslating(true);
       try {
         const res = await i18nService.translateUi(
           language,
           missing.map((s) => ({ key: s, text: s }))
         );
-        Object.assign(fetched, res);
+        // Mark every requested string done (echo source on any gap) so we never
+        // loop on it, then publish the translations.
+        missing.forEach((s) => {
+          translatedRef.current[s] = res[s] ?? s;
+        });
         if (!cancelled) setMap((prev) => ({ ...prev, ...res }));
       } catch {
-        // Leave the English fallback in place; retry on the next nudge.
+        // Leave the English fallback; a later nudge retries.
       } finally {
         if (!cancelled) {
           setIsTranslating(false);
-          if (firstBatch) {
-            firstBatch = false;
-            setIsSwitchingLanguage(false);
-          }
+          if (initial) setIsPageLoading(false);
         }
       }
     };
 
-    setMap({}); // fresh language — drop the previous map
-    setIsSwitchingLanguage(true); // entering a new language → show the skeleton
-    fetchMissing();
+    run(true);
 
     const unsub = subscribeToStrings(() => {
       window.clearTimeout(timer);
-      timer = window.setTimeout(fetchMissing, 150);
+      timer = window.setTimeout(() => run(false), 150);
     });
 
     return () => {
@@ -159,7 +174,7 @@ export const LocaleProvider: React.FC<{ children: ReactNode }> = ({
       window.clearTimeout(timer);
       unsub();
     };
-  }, [language]);
+  }, [language, pathname]);
 
   const t = useCallback(
     (text: string, params?: TParams) => {
@@ -180,17 +195,17 @@ export const LocaleProvider: React.FC<{ children: ReactNode }> = ({
         language,
         direction,
         isTranslating,
-        isSwitchingLanguage,
+        isPageLoading,
         setLanguage,
         t,
       }}
     >
       {children}
 
-      {/* Switching INTO a language: a full-screen app-shell skeleton covers the
-          ENTIRE app (every page + the navbar), so the whole UI reads as loading
-          until the new language is ready — not just a bar on some pages. */}
-      {isSwitchingLanguage && language !== DEFAULT_LOCALE && (
+      {/* The page being viewed/navigated-to is still being translated: a
+          full-screen app-shell skeleton covers the ENTIRE app (every page + the
+          navbar) until its strings are ready — not just a bar on top. */}
+      {isPageLoading && language !== DEFAULT_LOCALE && (
         <TranslationLoadingScreen
           label={t("Translating to {language}…", {
             language: getLocaleNativeName(language),
@@ -198,9 +213,9 @@ export const LocaleProvider: React.FC<{ children: ReactNode }> = ({
         />
       )}
 
-      {/* Slim indeterminate progress bar for the smaller incremental fetches
-          that happen as new strings appear on navigation (not a full switch). */}
-      {isTranslating && !isSwitchingLanguage && language !== DEFAULT_LOCALE && (
+      {/* Slim indeterminate bar for the small top-ups (async-loaded strings that
+          appear after the page is already up). */}
+      {isTranslating && !isPageLoading && language !== DEFAULT_LOCALE && (
         <div
           className="fixed inset-x-0 top-0 z-[200] h-0.5 overflow-hidden bg-indigo-500/15"
           role="status"
