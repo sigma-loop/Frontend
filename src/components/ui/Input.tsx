@@ -26,14 +26,16 @@ const Input: React.FC<InputProps> = ({
       <input
         id={id}
         className={`
-          w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm
-          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-          transition-all duration-200 shadow-sm
+          w-full px-3.5 py-2 rounded-lg border border-gray-300 bg-white text-gray-900
+          focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-500
+          transition-colors duration-150
+          placeholder:text-gray-400
           disabled:bg-gray-50 disabled:text-gray-500
-          dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-100
-          dark:focus:ring-indigo-400 dark:disabled:bg-gray-900 dark:disabled:text-gray-500
-          dark:placeholder-gray-500
-          ${error ? "border-red-300 focus:ring-red-500 dark:border-red-500 dark:focus:ring-red-400" : ""}
+          dark:border-gray-700 dark:bg-[#0d1117] dark:text-gray-100
+          dark:focus:ring-indigo-400/50 dark:focus:border-indigo-400
+          dark:disabled:bg-gray-900 dark:disabled:text-gray-500
+          dark:placeholder:text-gray-500
+          ${error ? "border-red-400 focus:ring-red-500/60 focus:border-red-500 dark:border-red-500 dark:focus:ring-red-400/50" : ""}
           ${className}
         `}
         {...props}
