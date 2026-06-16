@@ -84,20 +84,11 @@ const Navbar: React.FC = () => {
   const iconButtonClasses =
     "inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer";
 
-  // The mentor is the hero — a flat amber accent matching the "Learn a New
-  // Thing" CTA (rounded-lg, no gradient/glow). Always visible (guests too).
-  // The background is applied at the call site (our cn() doesn't merge Tailwind
-  // conflicts, so the active shade is chosen, not layered).
-  const mentorCta =
-    "group items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold text-amber-950 transition-colors active:scale-[.99]";
-  const mentorBg = (isActive: boolean) =>
-    isActive ? "bg-amber-300" : "bg-amber-400 hover:bg-amber-300";
-
-  const aiBadge = (
-    <span className="rounded bg-amber-950/10 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider">
-      {t("AI")}
-    </span>
-  );
+  // The AI Mentor is the hero entry point, but rendered as a golden text link
+  // (not a filled button) — the sparkle icon signals "AI", the gold hue makes
+  // it stand out. Always visible (guests too).
+  const mentorLink =
+    "group items-center gap-1.5 text-sm font-semibold text-amber-500 transition-colors hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300";
 
   const roleBadge = (
     <span className="shrink-0 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-white/10 dark:text-gray-300">
@@ -143,12 +134,15 @@ const Navbar: React.FC = () => {
             <NavLink
               to="/mentor"
               className={({ isActive }) =>
-                cn("hidden md:inline-flex", mentorCta, mentorBg(isActive))
+                cn(
+                  "hidden md:inline-flex",
+                  mentorLink,
+                  isActive && "text-amber-600 dark:text-amber-300"
+                )
               }
             >
               <Sparkles className="h-4 w-4 transition-transform group-hover:rotate-12" />
-              {t("Mentor")}
-              {aiBadge}
+              {t("AI Mentor")}
             </NavLink>
 
             {/* Language picker — available to everyone, incl. guests on Home */}
@@ -265,12 +259,14 @@ const Navbar: React.FC = () => {
               to="/mentor"
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
-                cn("flex", mentorCta, mentorBg(isActive))
+                cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold text-amber-600 transition-colors hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-500/10",
+                  isActive && "bg-amber-50 dark:bg-amber-500/10"
+                )
               }
             >
               <Sparkles className="h-4 w-4" />
-              {t("Mentor")}
-              {aiBadge}
+              {t("AI Mentor")}
             </NavLink>
 
             {navLinks.map((link) => (
