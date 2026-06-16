@@ -54,12 +54,15 @@ const steps = [
 const Home: React.FC = () => {
   const { t } = useLocale();
 
-  // Heading with an inline highlighted word. The full phrase is translated as
-  // one string (a sentinel token marks the highlight), then split so word
-  // order survives translation/RTL — never concatenate translated fragments.
-  const headingParts = t("Master the [[logic]] behind the code").split(
-    "[[logic]]"
-  );
+  // Heading with one inline highlighted word. The phrase is translated as a
+  // single string with a [[...]] marker around the highlight, so word order
+  // survives translation/RTL. We read the highlighted text back OUT of the
+  // (translated) marker — the AI translates the word inside the brackets but
+  // keeps the brackets — and wrap it. Never split on the English token: it
+  // doesn't survive translation, which would leak the brackets and duplicate
+  // the word.
+  const heading = t("Master the [[logic]] behind the code");
+  const headingMatch = heading.match(/^([\s\S]*?)\[\[([\s\S]*?)\]\]([\s\S]*)$/);
 
   return (
     <MainLayout title={t("Home")}>
@@ -73,9 +76,16 @@ const Home: React.FC = () => {
             </span>
 
             <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-6xl">
-              {headingParts[0]}
-              <span className="text-gradient">{t("logic")}</span>
-              {headingParts[1]}
+              {headingMatch ? (
+                <>
+                  {headingMatch[1]}
+                  <span className="text-gradient">{headingMatch[2]}</span>
+                  {headingMatch[3]}
+                </>
+              ) : (
+                // Marker didn't survive translation — show the prose, no leak.
+                heading.replace(/\[\[|\]\]/g, "")
+              )}
             </h1>
 
             <p className="mx-auto lg:mx-0 mt-5 max-w-xl text-lg leading-relaxed text-gray-600 dark:text-gray-400">
