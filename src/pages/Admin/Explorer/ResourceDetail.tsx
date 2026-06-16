@@ -11,6 +11,7 @@ import { adminService } from "../../../services/adminService";
 import type { AdminAncestor, AdminRecord } from "../../../types/api";
 import { ADMIN_RESOURCE_MAP } from "../../../constants/adminResources";
 import { useLocale } from "../../../contexts/LocaleContext";
+import { useConfirm, useAlert } from "../../../contexts/ConfirmContext";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 
 /**
@@ -94,6 +95,8 @@ const FieldValue: React.FC<{ value: unknown }> = ({ value }) => {
 
 const ResourceDetail: React.FC = () => {
   const { t } = useLocale();
+  const confirm = useConfirm();
+  const alert = useAlert();
   const { resource = "", id = "" } = useParams();
   const meta = ADMIN_RESOURCE_MAP[resource];
   const navigate = useNavigate();
@@ -129,20 +132,27 @@ const ResourceDetail: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        t(
-          "Delete this {singular}? This cascades to any child records and cannot be undone.",
-          { singular: meta?.singular ?? t("record") }
-        )
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: t("Delete {singular}", {
+        singular: meta?.singular ?? t("record"),
+      }),
+      message: t(
+        "Delete this {singular}? This cascades to any child records and cannot be undone.",
+        { singular: meta?.singular ?? t("record") }
+      ),
+      confirmLabel: t("Delete"),
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await adminService.deleteRecord(resource, id);
       navigate(`/admin/data/${resource}`);
     } catch (e) {
-      alert((e as Error).message || t("Delete failed"));
+      await alert({
+        title: t("Delete failed"),
+        message: (e as Error).message || t("Delete failed"),
+        danger: true,
+      });
     }
   };
 

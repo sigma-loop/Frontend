@@ -9,6 +9,7 @@ import { badgeVariant, refValue } from "../components/cells";
 import { adminService } from "../../../services/adminService";
 import type { AdminUserOverview } from "../../../types/api";
 import { useLocale } from "../../../contexts/LocaleContext";
+import { useConfirm, useAlert } from "../../../contexts/ConfirmContext";
 import { formatNumber, formatRelativeTime } from "../../../utils/formatters";
 import { ArrowLeft, CheckCircle2, Circle, Pencil, Trash2 } from "lucide-react";
 
@@ -16,6 +17,8 @@ const str = (v: unknown): string => (v == null ? "" : String(v));
 
 const UserOverview: React.FC = () => {
   const { t } = useLocale();
+  const confirm = useConfirm();
+  const alert = useAlert();
   const { userId = "" } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState<AdminUserOverview | null>(null);
@@ -38,19 +41,24 @@ const UserOverview: React.FC = () => {
   }, [fetchData]);
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(
-        t(
-          "Delete this user and ALL their data (courses, lessons, challenges, submissions, chats, jobs)? This cannot be undone."
-        )
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: t("Delete user"),
+      message: t(
+        "Delete this user and ALL their data (courses, lessons, challenges, submissions, chats, jobs)? This cannot be undone."
+      ),
+      confirmLabel: t("Delete"),
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await adminService.deleteRecord("users", userId);
       navigate("/admin/data/users");
     } catch (e) {
-      alert((e as Error).message || t("Delete failed"));
+      await alert({
+        title: t("Delete failed"),
+        message: (e as Error).message || t("Delete failed"),
+        danger: true,
+      });
     }
   };
 

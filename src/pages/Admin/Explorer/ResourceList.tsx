@@ -14,6 +14,7 @@ import {
   REF_FILTER_LABELS,
 } from "../../../constants/adminResources";
 import { useLocale } from "../../../contexts/LocaleContext";
+import { useConfirm, useAlert } from "../../../contexts/ConfirmContext";
 import { formatNumber } from "../../../utils/formatters";
 import { Plus, X } from "lucide-react";
 
@@ -22,6 +23,8 @@ const selectClass =
 
 const ResourceList: React.FC = () => {
   const { t } = useLocale();
+  const confirm = useConfirm();
+  const alert = useAlert();
   const { resource = "" } = useParams();
   const meta = ADMIN_RESOURCE_MAP[resource];
   const navigate = useNavigate();
@@ -90,20 +93,25 @@ const ResourceList: React.FC = () => {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (
-      !window.confirm(
-        t(
-          "Delete this {singular}? This cascades to any child records and cannot be undone.",
-          { singular: meta.singular }
-        )
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: t("Delete {singular}", { singular: meta.singular }),
+      message: t(
+        "Delete this {singular}? This cascades to any child records and cannot be undone.",
+        { singular: meta.singular }
+      ),
+      confirmLabel: t("Delete"),
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await adminService.deleteRecord(resource, id);
       fetchData();
     } catch (err) {
-      alert((err as Error).message || t("Delete failed"));
+      await alert({
+        title: t("Delete failed"),
+        message: (err as Error).message || t("Delete failed"),
+        danger: true,
+      });
     }
   };
 

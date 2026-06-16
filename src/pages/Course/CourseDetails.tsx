@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
-  MessageCircle,
-  X,
   Sparkles,
   AlertTriangle,
   Trash2,
@@ -15,20 +13,15 @@ import MainLayout from "../../components/layouts/MainLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
-import ChatWidget from "../../components/chat/ChatWidget";
 import { courseService } from "../../services/courseService";
 import { lessonService } from "../../services/lessonService";
 import { userService } from "../../services/userService";
 import { useCurriculumJob } from "../../hooks/useCurriculumJob";
 import { ROUTES, buildRoute } from "../../constants/routes";
 import { useLocale } from "../../contexts/LocaleContext";
+import { useConfirm } from "../../contexts/ConfirmContext";
 import { useAuth } from "../../contexts/AuthContext";
-import type {
-  Course,
-  SyllabusResponse,
-  MentorAction,
-  LessonLockMode,
-} from "../../types/api";
+import type { Course, SyllabusResponse, LessonLockMode } from "../../types/api";
 
 /**
  * Read-only view of one of the user's generated courses.
@@ -36,13 +29,13 @@ import type {
  */
 const CourseDetails: React.FC = () => {
   const { t } = useLocale();
+  const confirm = useConfirm();
   const { refreshUser } = useAuth();
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [syllabus, setSyllabus] = useState<SyllabusResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showChat, setShowChat] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
@@ -157,14 +150,18 @@ const CourseDetails: React.FC = () => {
 
   const handleDeleteCourse = async () => {
     if (!courseId || !course) return;
-    if (
-      !window.confirm(
-        t("Delete “{title}” and all its lessons? This can’t be undone.", {
+    const ok = await confirm({
+      title: t("Delete course"),
+      message: t(
+        "Delete “{title}” and all its lessons? This can’t be undone.",
+        {
           title: course.title,
-        })
-      )
-    )
-      return;
+        }
+      ),
+      confirmLabel: t("Delete"),
+      danger: true,
+    });
+    if (!ok) return;
     setIsDeleting(true);
     try {
       await courseService.deleteCourse(courseId);
@@ -176,14 +173,15 @@ const CourseDetails: React.FC = () => {
   };
 
   const handleDeleteLesson = async (lessonId: string, lessonTitle: string) => {
-    if (
-      !window.confirm(
-        t("Delete the lesson “{title}”? This can’t be undone.", {
-          title: lessonTitle,
-        })
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: t("Delete lesson"),
+      message: t("Delete the lesson “{title}”? This can’t be undone.", {
+        title: lessonTitle,
+      }),
+      confirmLabel: t("Delete"),
+      danger: true,
+    });
+    if (!ok) return;
     setDeletingLessonId(lessonId);
     try {
       await lessonService.deleteLesson(lessonId);
@@ -194,27 +192,6 @@ const CourseDetails: React.FC = () => {
       setDeletingLessonId(null);
     }
   };
-
-  // The course mentor can act autonomously — reflect its changes here.
-  const handleMentorAction = useCallback(
-    (actions: MentorAction[]) => {
-      let refetch = false;
-      for (const a of actions) {
-        if (a.type === "GENERATE_MORE_LESSONS" && a.jobId) {
-          // Reuse the generate-more poll → banner + auto-refetch on READY.
-          setGenerateJobId(a.jobId);
-        } else if (
-          a.type === "CREATE_LESSON" ||
-          a.type === "EDIT_LESSON" ||
-          a.type === "UPDATE_COURSE"
-        ) {
-          refetch = true;
-        }
-      }
-      if (refetch) fetchCourseData();
-    },
-    [fetchCourseData]
-  );
 
   if (isLoading) {
     return (
@@ -577,48 +554,6 @@ const CourseDetails: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Floating Course Mentor Chat */}
-      {showChat && (
-        <div className="fixed bottom-0 end-0 z-50 w-full sm:w-[400px] h-[500px] sm:h-[550px] sm:bottom-6 sm:end-6 bg-white dark:bg-[#161b22] rounded-t-xl sm:rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-indigo-600">
-            <div className="flex items-center gap-2 text-white">
-              <MessageCircle className="w-4 h-4" />
-              <span className="text-sm font-semibold">
-                {t("Course Mentor")}
-              </span>
-            </div>
-            <button
-              onClick={() => setShowChat(false)}
-              className="p-1 rounded hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex-1 min-h-0">
-            <ChatWidget
-              scope="COURSE"
-              scopeId={courseId}
-              placeholder={t("Ask about this course...")}
-              welcomeTitle={t("Course Mentor")}
-              welcomeSubtitle={t('I can help you navigate "{title}"', {
-                title: course?.title ?? "",
-              })}
-              onMentorAction={handleMentorAction}
-            />
-          </div>
-        </div>
-      )}
-
-      {!showChat && (
-        <button
-          onClick={() => setShowChat(true)}
-          className="fixed bottom-6 end-6 z-50 flex items-center gap-2 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm transition-colors"
-        >
-          <MessageCircle className="w-5 h-5" />
-          {t("Course Mentor")}
-        </button>
-      )}
     </MainLayout>
   );
 };
