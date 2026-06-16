@@ -13,7 +13,7 @@ import PageMeta from "../../components/common/PageMeta";
 import { CurriculumGeneratingSkeleton } from "../../components/common/LoadingSkeleton";
 import { cn } from "../../utils/cn";
 import { ROUTES, buildRoute } from "../../constants/routes";
-import { TOPIC_LIBRARY } from "../../constants/topicLibrary";
+import { TOPIC_LIBRARY, topicLabel } from "../../constants/topicLibrary";
 import { questionnaireService } from "../../services/questionnaireService";
 import { useCurriculumJob } from "../../hooks/useCurriculumJob";
 import { useLocale } from "../../contexts/LocaleContext";
@@ -353,12 +353,12 @@ const Onboarding = () => {
                 <div>
                   <h3 className="eyebrow mb-2">{t("Topics")}</h3>
                   <div className="flex flex-wrap gap-2">
-                    {goals.topics.map((t) => (
+                    {goals.topics.map((topicId) => (
                       <span
-                        key={t}
+                        key={topicId}
                         className="px-3 py-1 rounded-full text-sm bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300"
                       >
-                        {t}
+                        {t(topicLabel(topicId))}
                       </span>
                     ))}
                   </div>

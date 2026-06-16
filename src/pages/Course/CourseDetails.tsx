@@ -6,6 +6,8 @@ import {
   Sparkles,
   AlertTriangle,
   Trash2,
+  Lock,
+  Eye,
 } from "lucide-react";
 import MainLayout from "../../components/layouts/MainLayout";
 import Card from "../../components/ui/Card";
@@ -14,10 +16,17 @@ import Badge from "../../components/ui/Badge";
 import ChatWidget from "../../components/chat/ChatWidget";
 import { courseService } from "../../services/courseService";
 import { lessonService } from "../../services/lessonService";
+import { userService } from "../../services/userService";
 import { useCurriculumJob } from "../../hooks/useCurriculumJob";
 import { ROUTES, buildRoute } from "../../constants/routes";
 import { useLocale } from "../../contexts/LocaleContext";
-import type { Course, SyllabusResponse, MentorAction } from "../../types/api";
+import { useAuth } from "../../contexts/AuthContext";
+import type {
+  Course,
+  SyllabusResponse,
+  MentorAction,
+  LessonLockMode,
+} from "../../types/api";
 
 /**
  * Read-only view of one of the user's generated courses.
@@ -25,6 +34,7 @@ import type { Course, SyllabusResponse, MentorAction } from "../../types/api";
  */
 const CourseDetails: React.FC = () => {
   const { t } = useLocale();
+  const { refreshUser } = useAuth();
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
@@ -33,6 +43,12 @@ const CourseDetails: React.FC = () => {
   const [showChat, setShowChat] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
+
+  // Lesson-lock mode (PROGRESS gates each lesson behind the previous; VIEW_ALL
+  // unlocks them all). Persisted as a user preference; the course page is just
+  // a convenient place to flip it.
+  const [lockMode, setLockMode] = useState<LessonLockMode>("PROGRESS");
+  const [switchingMode, setSwitchingMode] = useState(false);
 
   // "Generate more lessons" — enqueue an EXTEND_COURSE job and poll it.
   const [generateJobId, setGenerateJobId] = useState<string | null>(null);
@@ -50,12 +66,37 @@ const CourseDetails: React.FC = () => {
       ]);
       setCourse(details);
       setSyllabus(syllabusData);
+      setLockMode(syllabusData.lessonLockMode ?? "PROGRESS");
     } catch (error) {
       console.error("Failed to load course details:", error);
     } finally {
       setIsLoading(false);
     }
   }, [courseId]);
+
+  // Flip the lesson-lock mode: persist the preference, then silently re-pull
+  // the syllabus so the lesson statuses reflect it (no full-page reload).
+  const handleChangeLockMode = async (mode: LessonLockMode) => {
+    if (!courseId || mode === lockMode || switchingMode) return;
+    const previous = lockMode;
+    setLockMode(mode); // optimistic
+    setSwitchingMode(true);
+    try {
+      await userService.updatePreferences({
+        learning: { lessonLockMode: mode },
+      });
+      // Keep the auth context fresh so LessonView's "Next" gating agrees.
+      await refreshUser();
+      const syllabusData = await courseService.getSyllabus(courseId);
+      setSyllabus(syllabusData);
+      setLockMode(syllabusData.lessonLockMode ?? mode);
+    } catch (error) {
+      console.error("Failed to change lesson lock mode:", error);
+      setLockMode(previous); // revert
+    } finally {
+      setSwitchingMode(false);
+    }
+  };
 
   useEffect(() => {
     fetchCourseData();
@@ -347,6 +388,56 @@ const CourseDetails: React.FC = () => {
               <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
                 {t("Generating more lessons — they'll appear here when ready.")}
               </p>
+            </div>
+          )}
+
+          {syllabus.lessons.length > 1 && (
+            <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="eyebrow text-gray-500 dark:text-gray-400">
+                {t("Lesson access")}
+              </span>
+              <div
+                role="group"
+                aria-label={t("Lesson access")}
+                className="inline-flex items-center self-start rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-800 dark:bg-[#0d1117]"
+              >
+                {[
+                  {
+                    mode: "PROGRESS" as const,
+                    label: t("Progress"),
+                    hint: t(
+                      "Unlock each lesson only after completing the one before it."
+                    ),
+                    icon: Lock,
+                  },
+                  {
+                    mode: "VIEW_ALL" as const,
+                    label: t("View all"),
+                    hint: t("Unlock every lesson so you can jump around."),
+                    icon: Eye,
+                  },
+                ].map(({ mode, label, hint, icon: Icon }) => {
+                  const active = lockMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => handleChangeLockMode(mode)}
+                      disabled={switchingMode}
+                      aria-pressed={active}
+                      title={hint}
+                      className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60 ${
+                        active
+                          ? "bg-white text-indigo-700 shadow-sm dark:bg-[#161b22] dark:text-indigo-400"
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

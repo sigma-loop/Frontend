@@ -29,6 +29,7 @@ import type {
 } from "../../types/api";
 import { CHALLENGE_KINDS, SUPPORTED_LANGUAGES } from "../../constants";
 import { useLocale } from "../../contexts/LocaleContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { DEFAULT_LOCALE, getLocaleNativeName } from "../../constants/locales";
 import LessonContent from "./components/LessonContent";
 import ChallengeWorkspace from "./components/ChallengeWorkspace";
@@ -53,6 +54,12 @@ const LessonView = () => {
   const [showChat, setShowChat] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("lesson");
 
+  // Lesson-lock mode (user preference). In PROGRESS the "Next" control only
+  // appears once this lesson is complete (the next lesson is then unlocked);
+  // in VIEW_ALL it's always available.
+  const { user } = useAuth();
+  const lockMode = user?.preferences?.learning?.lessonLockMode ?? "PROGRESS";
+
   // On-demand lesson translation into the learner's chosen UI language.
   const { language, t } = useLocale();
   const [translation, setTranslation] =
@@ -60,11 +67,29 @@ const LessonView = () => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [translating, setTranslating] = useState(false);
 
-  // A translation is specific to one lesson + language — drop it when either
-  // changes so we never show a stale/foreign translation.
+  // A translation is specific to one lesson + language. When either changes,
+  // drop the current one, then auto-restore a cached translation if the server
+  // already has one — so a lesson the learner previously translated reopens in
+  // their language instead of reverting to English. This is a pure read (no AI);
+  // first-time translation still happens on the Translate button.
   useEffect(() => {
     setTranslation(null);
     setShowTranslation(false);
+    if (!lessonId || language === DEFAULT_LOCALE) return;
+    let cancelled = false;
+    lessonService
+      .getLessonTranslation(lessonId, language)
+      .then((res) => {
+        if (cancelled || !res) return;
+        setTranslation(res);
+        setShowTranslation(true);
+      })
+      .catch(() => {
+        /* no cached translation — keep showing the original */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [lessonId, language]);
 
   const handleTranslate = useCallback(async () => {
@@ -321,6 +346,11 @@ const LessonView = () => {
   const lessonComplete =
     challenges.length > 0 && challenges.every((c) => completed.has(c.id));
 
+  // In PROGRESS mode the next lesson is unlocked only once this one is complete
+  // (matching the syllabus gating); in VIEW_ALL it's always reachable.
+  const canGoNext =
+    !!v.nextLessonId && (lockMode === "VIEW_ALL" || lessonComplete);
+
   // Derive available languages from the active challenge's starter codes.
   const challengeLanguages =
     activeChallenge?.kind === CHALLENGE_KINDS.PROGRAMMING
@@ -444,7 +474,7 @@ const LessonView = () => {
               <span className="hidden sm:inline ms-1">{t("Previous")}</span>
             </Button>
           )}
-          {v.nextLessonId && (
+          {canGoNext && (
             <Button
               variant="outline"
               size="sm"

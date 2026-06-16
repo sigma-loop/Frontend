@@ -6,6 +6,10 @@ export interface JSendResponse<T> {
   details?: unknown;
 }
 
+// How a course syllabus gates its lessons. PROGRESS unlocks each lesson only
+// after the previous one is completed (default); VIEW_ALL unlocks them all.
+export type LessonLockMode = "PROGRESS" | "VIEW_ALL";
+
 export interface UserPreferences {
   notifications: {
     curriculumReady: boolean;
@@ -21,6 +25,10 @@ export interface UserPreferences {
   localization?: {
     language: string;
     direction: "ltr" | "rtl";
+  };
+  // Lesson-lock behavior across the learner's courses.
+  learning?: {
+    lessonLockMode: LessonLockMode;
   };
 }
 
@@ -376,6 +384,9 @@ export interface SyllabusResponse {
   userProgress: {
     percent: number;
   };
+  // The lock mode the lesson statuses below were computed with (echoes the
+  // user's preference). In VIEW_ALL no lesson is ever "LOCKED".
+  lessonLockMode?: LessonLockMode;
   lessons: {
     id: string;
     orderIndex: number;

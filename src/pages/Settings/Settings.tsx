@@ -11,6 +11,8 @@ import {
   Check,
   X,
   Languages,
+  GraduationCap,
+  Eye,
 } from "lucide-react";
 import MainLayout from "../../components/layouts/MainLayout";
 import Button from "../../components/ui/Button";
@@ -18,7 +20,7 @@ import Input from "../../components/ui/Input";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLocale } from "../../contexts/LocaleContext";
 import { userService } from "../../services/userService";
-import type { UserPreferences } from "../../types/api";
+import type { UserPreferences, LessonLockMode } from "../../types/api";
 import { SUPPORTED_LOCALES, getLocaleDir } from "../../constants/locales";
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -31,12 +33,16 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     marketingEmails: false,
     usageAnalytics: true,
   },
+  learning: {
+    lessonLockMode: "PROGRESS",
+  },
 };
 
 type TabId =
   | "account"
   | "security"
   | "language"
+  | "learning"
   | "notifications"
   | "privacy"
   | "danger";
@@ -46,6 +52,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "account", label: "Account", icon: UserIcon },
   { id: "security", label: "Security", icon: Lock },
   { id: "language", label: "Language", icon: Languages },
+  { id: "learning", label: "Learning", icon: GraduationCap },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "privacy", label: "Privacy", icon: ShieldCheck },
   { id: "danger", label: "Danger zone", icon: AlertTriangle },
@@ -223,6 +230,9 @@ const Settings: React.FC = () => {
 
   const setPrivacy = (key: keyof UserPreferences["privacy"], v: boolean) =>
     persistPrefs({ ...prefs, privacy: { ...prefs.privacy, [key]: v } });
+
+  const setLessonLockMode = (mode: LessonLockMode) =>
+    persistPrefs({ ...prefs, learning: { lessonLockMode: mode } });
 
   // Switch the UI language: flip the site instantly (LocaleContext), then
   // persist the choice. The server derives the text direction from the language.
@@ -444,6 +454,66 @@ const Settings: React.FC = () => {
                         </span>
                         {active && (
                           <Check className="h-4 w-4 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </SectionCard>
+            )}
+
+            {tab === "learning" && (
+              <SectionCard
+                title={t("Lesson access")}
+                description={t(
+                  "Choose how lessons unlock as you work through a course."
+                )}
+              >
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {(
+                    [
+                      {
+                        mode: "PROGRESS",
+                        title: t("Progress"),
+                        desc: t(
+                          "Unlock each lesson only after completing the one before it."
+                        ),
+                        icon: Lock,
+                      },
+                      {
+                        mode: "VIEW_ALL",
+                        title: t("View all"),
+                        desc: t(
+                          "Unlock every lesson so you can jump around freely."
+                        ),
+                        icon: Eye,
+                      },
+                    ] as const
+                  ).map(({ mode, title, desc, icon: Icon }) => {
+                    const active =
+                      (prefs.learning?.lessonLockMode ?? "PROGRESS") === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setLessonLockMode(mode)}
+                        className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-start transition-colors ${
+                          active
+                            ? "border-indigo-500 bg-indigo-50 dark:border-indigo-500/60 dark:bg-indigo-500/10"
+                            : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700"
+                        }`}
+                      >
+                        <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-gray-900 dark:text-white">
+                            {title}
+                          </span>
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">
+                            {desc}
+                          </span>
+                        </span>
+                        {active && (
+                          <Check className="ms-auto h-4 w-4 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
                         )}
                       </button>
                     );

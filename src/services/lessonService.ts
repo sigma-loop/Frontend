@@ -50,6 +50,24 @@ export const lessonService = {
     await api.delete(`/lessons/${lessonId}`);
   },
 
+  // Read a previously-cached lesson translation WITHOUT triggering the AI.
+  // Returns null when this lesson hasn't been translated into `language` yet.
+  // Used to auto-restore the learner's language when a lesson is reopened, so a
+  // translated lesson stays translated (generation stays on translateLesson).
+  getLessonTranslation: async (
+    lessonId: string,
+    language: string
+  ): Promise<LessonTranslationResult | null> => {
+    const response = await api.get<
+      JSendResponse<LessonTranslationResult & { cached?: boolean }>
+    >(`/lessons/${lessonId}/translation`, { params: { language } });
+    const data = response.data.data;
+    if (!data || data.cached === false) {
+      return null;
+    }
+    return data;
+  },
+
   // Translate a lesson's prose (title, body, challenge statements) into the
   // given language. Cached server-side per (lesson, language), so a re-request
   // is fast. Code, LaTeX, and answer keys are preserved.
