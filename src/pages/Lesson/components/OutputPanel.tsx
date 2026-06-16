@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Clock,
   Cpu,
-  EyeOff,
 } from "lucide-react";
 import { type ExecutionResult, type TestResult } from "../../../types/api";
 
@@ -18,37 +17,6 @@ interface OutputPanelProps {
 
 const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
   const [expanded, setExpanded] = useState(!result.passed);
-
-  if (result.isHidden) {
-    return (
-      <div
-        className={`rounded-lg border ${
-          result.passed
-            ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/30"
-            : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
-        }`}
-      >
-        <div className="flex items-center gap-2 px-3 py-2">
-          {result.passed ? (
-            <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
-          ) : (
-            <XCircle className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0" />
-          )}
-          <span
-            className={`text-sm font-medium ${
-              result.passed
-                ? "text-green-700 dark:text-green-400"
-                : "text-red-700 dark:text-red-400"
-            }`}
-          >
-            Test {result.index}
-          </span>
-          <EyeOff className="w-3.5 h-3.5 text-gray-400 ml-auto" />
-          <span className="text-xs text-gray-400 italic">Hidden</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -77,7 +45,7 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
           Test {result.index}
         </span>
         <span
-          className={`text-xs px-1.5 py-0.5 rounded ${
+          className={`text-xs px-1.5 py-0.5 rounded-md ${
             result.passed
               ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
               : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"
@@ -104,7 +72,7 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
               <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 Input
               </span>
-              <pre className="mt-0.5 text-xs bg-white dark:bg-[#161b22] rounded px-2 py-1.5 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-200 overflow-x-auto">
+              <pre className="mt-0.5 text-xs bg-white dark:bg-[#161b22] rounded-md px-2 py-1.5 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-200 overflow-x-auto">
                 {result.input || "(empty)"}
               </pre>
             </div>
@@ -112,7 +80,7 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
               <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">
                 Expected Output
               </span>
-              <pre className="mt-0.5 text-xs bg-white dark:bg-[#161b22] rounded px-2 py-1.5 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-400 overflow-x-auto">
+              <pre className="mt-0.5 text-xs bg-white dark:bg-[#161b22] rounded-md px-2 py-1.5 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-400 overflow-x-auto">
                 {result.expectedOutput || "(empty)"}
               </pre>
             </div>
@@ -127,7 +95,7 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
                 Your Output
               </span>
               <pre
-                className={`mt-0.5 text-xs bg-white dark:bg-[#161b22] rounded px-2 py-1.5 border overflow-x-auto ${
+                className={`mt-0.5 text-xs bg-white dark:bg-[#161b22] rounded-md px-2 py-1.5 border overflow-x-auto ${
                   result.passed
                     ? "border-green-200 dark:border-green-800 text-green-800 dark:text-green-400"
                     : "border-red-200 dark:border-red-800 text-red-800 dark:text-red-400"
@@ -142,7 +110,7 @@ const TestCaseCard: React.FC<{ result: TestResult }> = ({ result }) => {
               <span className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
                 Stderr / Compile Error
               </span>
-              <pre className="mt-0.5 text-xs bg-red-50 dark:bg-red-900/20 rounded px-2 py-1.5 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 overflow-x-auto whitespace-pre-wrap">
+              <pre className="mt-0.5 text-xs bg-red-50 dark:bg-red-900/20 rounded-md px-2 py-1.5 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 overflow-x-auto whitespace-pre-wrap">
                 {result.stderr}
               </pre>
             </div>
@@ -181,7 +149,7 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
   // Fallback for ERROR status (network errors, etc.)
   if (executionResult.status === "ERROR") {
     return (
-      <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0d1117] overflow-hidden">
+      <div className="h-full flex flex-col bg-gray-50 dark:bg-[#0d1117] overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
           <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
           <span className="text-sm font-medium text-red-700 dark:text-red-400">
@@ -204,7 +172,7 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
   const allPassed = executionResult.status === "PASSED";
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0d1117] overflow-hidden">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-[#0d1117] overflow-hidden">
       {/* Header */}
       <div
         className={`flex items-center justify-between px-4 py-2 border-b ${
@@ -229,7 +197,7 @@ const OutputPanel: React.FC<OutputPanelProps> = ({
             {allPassed ? "All Tests Passed" : "Some Tests Failed"}
           </span>
           <span
-            className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+            className={`text-xs font-mono px-1.5 py-0.5 rounded-md ${
               allPassed
                 ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                 : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"

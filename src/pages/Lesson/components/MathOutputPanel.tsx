@@ -3,14 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import {
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Terminal,
-  Hash,
-  Equal,
-} from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Terminal, Equal } from "lucide-react";
 import {
   type MathExecutionResult,
   type MathSubmissionStatus,
@@ -23,8 +16,6 @@ interface MathOutputPanelProps {
   result: MathExecutionResult | null;
   error?: string | null;
   isLoading?: boolean;
-  remainingRuns?: number;
-  runLimit?: number;
 }
 
 const statusConfig: Record<
@@ -66,8 +57,6 @@ const MathOutputPanel: React.FC<MathOutputPanelProps> = ({
   result,
   error,
   isLoading,
-  remainingRuns,
-  runLimit,
 }) => {
   if (isLoading) {
     return (
@@ -94,21 +83,14 @@ const MathOutputPanel: React.FC<MathOutputPanelProps> = ({
         <p className="text-sm text-center">
           Write your LaTeX answer and click Run to check it.
         </p>
-        {remainingRuns !== undefined && runLimit !== undefined && (
-          <p className="text-xs mt-2 flex items-center gap-1">
-            <Hash className="w-3 h-3" />
-            {remainingRuns}/{runLimit} evaluations remaining
-          </p>
-        )}
       </div>
     );
   }
 
   const config = statusConfig[result.status] ?? statusConfig.PENDING_REVIEW;
-  const confidencePercent = Math.round(result.verdict.confidence * 100);
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0d1117] overflow-hidden">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-[#0d1117] overflow-hidden">
       {/* Verdict Header */}
       <div
         className={`flex items-center justify-between px-4 py-2 border-b ${config.bg} ${config.border}`}
@@ -119,32 +101,9 @@ const MathOutputPanel: React.FC<MathOutputPanelProps> = ({
             {config.label}
           </span>
           {result.verdict.equivalentForm && (
-            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+            <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
               <Equal className="w-3 h-3" />
               Equivalent form
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Confidence indicator */}
-          <span
-            className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5"
-            title="How confident the grader is in this verdict"
-          >
-            <span className="w-16 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-              <span
-                className={`block h-full rounded-full ${
-                  confidencePercent >= 70 ? "bg-green-500" : "bg-amber-500"
-                }`}
-                style={{ width: `${confidencePercent}%` }}
-              />
-            </span>
-            {confidencePercent}%
-          </span>
-          {remainingRuns !== undefined && runLimit !== undefined && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-              <Hash className="w-3 h-3" />
-              {remainingRuns}/{runLimit}
             </span>
           )}
         </div>

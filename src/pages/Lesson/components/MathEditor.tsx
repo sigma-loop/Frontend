@@ -1,77 +1,149 @@
-import React, { useState, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
-import { Eye, EyeOff } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { MathfieldElement } from "mathlive";
+import { Eye, EyeOff, Keyboard } from "lucide-react";
 
-const remarkPlugins = [remarkMath];
-const rehypePlugins = [rehypeKatex];
+// MathLive loads its fonts (and optionally sounds) at runtime. The fonts are
+// copied into /public/mathlive/fonts so Vite serves them at this path.
+// These are static settings and only take effect before a field is created.
+MathfieldElement.fontsDirectory = "/mathlive/fonts";
+MathfieldElement.soundsDirectory = null; // no keypress sounds
 
 interface MathEditorProps {
   value: string;
   onChange: (value: string) => void;
 }
 
+/**
+ * Visual math editor for MATH challenges. Students compose their answer with a
+ * WYSIWYG field and an on-screen math keyboard (MathLive) instead of hand-writing
+ * LaTeX — but the field still emits LaTeX, so the submission pipeline is unchanged.
+ */
 const MathEditor: React.FC<MathEditorProps> = ({ value, onChange }) => {
-  const [showPreview, setShowPreview] = useState(true);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<MathfieldElement | null>(null);
+  const [showLatex, setShowLatex] = useState(false);
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onChange(e.target.value);
-    },
-    [onChange]
-  );
+  // Keep the latest onChange callback without re-creating the field.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  // Wrap the raw value in display math delimiters for preview
-  const previewContent = value.trim()
-    ? `$$${value}$$`
-    : "*Type your LaTeX answer above...*";
+  // Create the math field once and wire up its input event.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+
+    const field = new MathfieldElement();
+    field.value = value;
+    // NOTE: we render our own placeholder overlay below instead of the
+    // math-field `placeholder` attribute — MathLive typesets that text as math,
+    // which collapses the spaces ("Type your answer" → "Typeyouranswer").
+    field.mathVirtualKeyboardPolicy = "auto"; // touch: on focus; desktop: via the button
+    field.className =
+      "block w-full bg-transparent text-gray-900 dark:text-gray-100";
+    field.style.fontSize = "1.25rem";
+    field.style.padding = "1rem";
+
+    const handleInput = () => onChangeRef.current(field.value);
+    field.addEventListener("input", handleInput);
+
+    // Make Enter insert a single LaTeX line break so a student can write a
+    // multi-line answer. We listen in the CAPTURE phase and stop propagation so
+    // MathLive's own keydown handler (on its shadow-DOM sink) never runs —
+    // otherwise it inserts a line break too and Enter jumps two lines.
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        field.insert("\\\\", { focus: true });
+      }
+    };
+    field.addEventListener("keydown", handleKeyDown, { capture: true });
+
+    host.appendChild(field);
+    fieldRef.current = field;
+
+    return () => {
+      field.removeEventListener("input", handleInput);
+      field.removeEventListener("keydown", handleKeyDown, { capture: true });
+      field.remove();
+      fieldRef.current = null;
+    };
+    // value is intentionally read only for the initial mount; later changes are
+    // synced by the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Push external value changes (challenge switch, localStorage restore) into the field.
+  useEffect(() => {
+    const field = fieldRef.current;
+    if (field && field.value !== value) {
+      field.value = value;
+    }
+  }, [value]);
+
+  const toggleKeyboard = useCallback(() => {
+    const keyboard = window.mathVirtualKeyboard;
+    keyboard.visible = !keyboard.visible;
+    fieldRef.current?.focus();
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Editor */}
-      <div className="flex-1 min-h-0 flex flex-col">
-        <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            LaTeX Answer
-          </span>
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-[#0d1117] border-b border-gray-200 dark:border-gray-800">
+        <span className="eyebrow">
+          Your Answer
+        </span>
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowPreview(!showPreview)}
+            type="button"
+            onClick={toggleKeyboard}
             className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
           >
-            {showPreview ? (
+            <Keyboard className="w-3.5 h-3.5" />
+            Math Keyboard
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowLatex((s) => !s)}
+            className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          >
+            {showLatex ? (
               <EyeOff className="w-3.5 h-3.5" />
             ) : (
               <Eye className="w-3.5 h-3.5" />
             )}
-            {showPreview ? "Hide" : "Show"} Preview
+            {showLatex ? "Hide" : "Show"} LaTeX
           </button>
         </div>
-        <textarea
-          value={value}
-          onChange={handleChange}
-          placeholder="e.g.  \frac{n(n+1)}{2}  or  \Theta(n \log n)"
-          spellCheck={false}
-          className="flex-1 w-full resize-none p-4 font-mono text-sm bg-white dark:bg-[#161b22] text-gray-900 dark:text-gray-100 border-none outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-600"
-        />
       </div>
 
-      {/* Live Preview */}
-      {showPreview && (
-        <div className="border-t border-gray-200 dark:border-gray-700">
-          <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Preview
+      {/* WYSIWYG math field (MathLive mounts here) */}
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={hostRef}
+          className="absolute inset-0 overflow-y-auto bg-white dark:bg-[#161b22] flex items-start"
+        />
+        {/* Custom placeholder — see note in the field effect above. */}
+        {!value.trim() && (
+          <span className="pointer-events-none absolute left-4 top-4 text-[1.25rem] leading-none text-gray-400 dark:text-gray-500 select-none">
+            Type your answer or use the math keyboard…
+          </span>
+        )}
+      </div>
+
+      {/* Raw LaTeX — what actually gets submitted */}
+      {showLatex && (
+        <div className="border-t border-gray-200 dark:border-gray-800">
+          <div className="px-3 py-1.5 bg-gray-50 dark:bg-[#0d1117] border-b border-gray-200 dark:border-gray-800">
+            <span className="eyebrow">
+              LaTeX Source
             </span>
           </div>
-          <div className="p-4 bg-white dark:bg-[#0d1117] min-h-[60px] max-h-[150px] overflow-y-auto prose prose-slate dark:prose-invert max-w-none text-center">
-            <ReactMarkdown
-              remarkPlugins={remarkPlugins}
-              rehypePlugins={rehypePlugins}
-            >
-              {previewContent}
-            </ReactMarkdown>
+          <div className="p-3 bg-white dark:bg-[#0d1117] max-h-[120px] overflow-y-auto">
+            <code className="text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-all">
+              {value.trim() || "—"}
+            </code>
           </div>
         </div>
       )}
