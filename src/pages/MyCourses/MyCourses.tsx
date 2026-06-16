@@ -169,10 +169,10 @@ const MyCourses: React.FC = () => {
                     ) : null}
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                    {course.title}
+                    {t(course.title)}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
-                    {course.description}
+                    {course.description ? t(course.description) : ""}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {course.tags.map((tag) => (

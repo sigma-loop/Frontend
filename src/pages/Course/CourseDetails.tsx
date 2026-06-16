@@ -323,10 +323,10 @@ const CourseDetails: React.FC = () => {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                {course.title}
+                {t(course.title)}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-                {course.description}
+                {course.description ? t(course.description) : ""}
               </p>
             </div>
             <div className="mt-4 md:mt-0 text-start md:text-end">
@@ -457,7 +457,7 @@ const CourseDetails: React.FC = () => {
                       {getStatusIcon(lesson.status)}
                     </span>
                     <h3 className="min-w-0 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {lesson.orderIndex}. {lesson.title}
+                      {lesson.orderIndex}. {t(lesson.title)}
                     </h3>
                     {lesson.generationStatus === "STUB" &&
                       lesson.status !== "LOCKED" && (

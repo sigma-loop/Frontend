@@ -243,7 +243,7 @@ const Dashboard: React.FC = () => {
                 >
                   <div className="mb-4">
                     <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
-                      {course.title}
+                      {t(course.title)}
                     </h3>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {t("{count} Lessons", {
