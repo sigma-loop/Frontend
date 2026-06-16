@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Copy, Check, ChevronDown, ChevronRight } from "lucide-react";
+import { useLocale } from "../../../contexts/LocaleContext";
 
 interface JsonBlockProps {
   value: unknown;
@@ -9,11 +10,13 @@ interface JsonBlockProps {
 
 const JsonBlock: React.FC<JsonBlockProps> = ({
   value,
-  label = "Raw JSON",
+  label,
   defaultCollapsed = false,
 }) => {
+  const { t } = useLocale();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [copied, setCopied] = useState(false);
+  const resolvedLabel = label ?? t("Raw JSON");
 
   let text: string;
   try {
@@ -40,11 +43,11 @@ const JsonBlock: React.FC<JsonBlockProps> = ({
           className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
           ) : (
             <ChevronDown className="w-4 h-4" />
           )}
-          {label}
+          {resolvedLabel}
         </button>
         <button
           onClick={copy}
@@ -55,7 +58,7 @@ const JsonBlock: React.FC<JsonBlockProps> = ({
           ) : (
             <Copy className="w-3.5 h-3.5" />
           )}
-          {copied ? "Copied" : "Copy"}
+          {copied ? t("Copied") : t("Copy")}
         </button>
       </div>
       {!collapsed && (

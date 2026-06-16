@@ -10,15 +10,19 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   ONBOARDING: "/onboarding",
   MENTOR: "/mentor",
+  SETTINGS: "/settings",
   MY_COURSES: "/my-courses",
   COURSE_DETAILS: "/courses/:courseId",
   LESSON: "/lessons/:lessonId",
 
-  // Admin
+  // Admin — GOD panel
   ADMIN: "/admin",
   ADMIN_DASHBOARD: "/admin",
   ADMIN_USERS: "/admin/users",
   ADMIN_JOBS: "/admin/jobs",
+  ADMIN_DATA: "/admin/data/:resource",
+  ADMIN_RECORD: "/admin/data/:resource/:id",
+  ADMIN_USER_OVERVIEW: "/admin/overview/:userId",
 } as const;
 
 /**

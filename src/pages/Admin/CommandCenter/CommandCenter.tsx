@@ -8,6 +8,7 @@ import type {
   AdminCountBucket,
   AdminSeriesPoint,
 } from "../../../types/api";
+import { useLocale } from "../../../contexts/LocaleContext";
 import { formatNumber } from "../../../utils/formatters";
 import {
   Users,
@@ -26,11 +27,12 @@ const Breakdown: React.FC<{ title: string; buckets: AdminCountBucket[] }> = ({
   title,
   buckets,
 }) => {
+  const { t } = useLocale();
   const total = buckets.reduce((s, b) => s + b.count, 0) || 1;
   return (
     <Card title={title}>
       {buckets.length === 0 ? (
-        <p className="text-sm text-gray-400">No data</p>
+        <p className="text-sm text-gray-400">{t("No data")}</p>
       ) : (
         <div className="space-y-3">
           {buckets.map((b) => (
@@ -61,11 +63,14 @@ const Sparkbars: React.FC<{ title: string; points: AdminSeriesPoint[] }> = ({
   title,
   points,
 }) => {
+  const { t } = useLocale();
   const max = Math.max(1, ...points.map((p) => p.count));
   return (
     <Card title={title}>
       {points.length === 0 ? (
-        <p className="text-sm text-gray-400">No activity in the last 30 days</p>
+        <p className="text-sm text-gray-400">
+          {t("No activity in the last 30 days")}
+        </p>
       ) : (
         <div className="flex items-end gap-1 h-32">
           {points.map((p) => (
@@ -132,6 +137,7 @@ const TOTALS: {
 ];
 
 const CommandCenter: React.FC = () => {
+  const { t } = useLocale();
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -154,7 +160,7 @@ const CommandCenter: React.FC = () => {
 
   if (loading) {
     return (
-      <AdminLayout title="Command Center">
+      <AdminLayout title={t("Command Center")}>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400" />
         </div>
@@ -164,10 +170,10 @@ const CommandCenter: React.FC = () => {
 
   if (!metrics) {
     return (
-      <AdminLayout title="Command Center">
+      <AdminLayout title={t("Command Center")}>
         <Card>
           <p className="text-gray-500 dark:text-gray-400">
-            Could not load metrics.
+            {t("Could not load metrics.")}
           </p>
         </Card>
       </AdminLayout>
@@ -177,26 +183,28 @@ const CommandCenter: React.FC = () => {
   const pct = (n: number) => `${Math.round(n * 100)}%`;
 
   return (
-    <AdminLayout title="Command Center">
+    <AdminLayout title={t("Command Center")}>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Command Center
+            {t("Command Center")}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Every collection, every record — the whole platform at a glance.
+            {t(
+              "Every collection, every record — the whole platform at a glance."
+            )}
           </p>
         </div>
 
         {/* Totals */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {TOTALS.map((t) => (
+          {TOTALS.map((item) => (
             <StatCard
-              key={t.key}
-              label={t.label}
-              value={formatNumber(metrics.totals[t.key])}
-              icon={t.icon}
-              to={`/admin/data/${t.key}`}
+              key={item.key}
+              label={t(item.label)}
+              value={formatNumber(metrics.totals[item.key])}
+              icon={item.icon}
+              to={`/admin/data/${item.key}`}
             />
           ))}
         </div>
@@ -204,36 +212,41 @@ const CommandCenter: React.FC = () => {
         {/* Derived rates */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            label="Submission pass rate"
+            label={t("Submission pass rate")}
             value={pct(metrics.derived.submissionPassRate)}
-            sub={`${formatNumber(metrics.derived.passedSubmissions)} passed`}
+            sub={t("{n} passed", {
+              n: formatNumber(metrics.derived.passedSubmissions),
+            })}
           />
           <StatCard
-            label="Lesson completion rate"
+            label={t("Lesson completion rate")}
             value={pct(metrics.derived.lessonCompletionRate)}
-            sub={`${formatNumber(
-              metrics.derived.completedProgress
-            )} lessons completed`}
+            sub={t("{n} lessons completed", {
+              n: formatNumber(metrics.derived.completedProgress),
+            })}
           />
           <StatCard
-            label="New users · 7d"
+            label={t("New users · 7d")}
             value={formatNumber(metrics.derived.newUsers7)}
           />
           <StatCard
-            label="New courses · 7d"
+            label={t("New courses · 7d")}
             value={formatNumber(metrics.derived.newCourses7)}
           />
         </div>
 
         {/* Trends */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Sparkbars title="New users (30d)" points={metrics.series.users} />
           <Sparkbars
-            title="New courses (30d)"
+            title={t("New users (30d)")}
+            points={metrics.series.users}
+          />
+          <Sparkbars
+            title={t("New courses (30d)")}
             points={metrics.series.courses}
           />
           <Sparkbars
-            title="Submissions (30d)"
+            title={t("Submissions (30d)")}
             points={metrics.series.submissions}
           />
         </div>
@@ -241,43 +254,43 @@ const CommandCenter: React.FC = () => {
         {/* Breakdowns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Breakdown
-            title="Users by role"
+            title={t("Users by role")}
             buckets={metrics.breakdowns.usersByRole}
           />
           <Breakdown
-            title="Courses by status"
+            title={t("Courses by status")}
             buckets={metrics.breakdowns.coursesByStatus}
           />
           <Breakdown
-            title="Courses by difficulty"
+            title={t("Courses by difficulty")}
             buckets={metrics.breakdowns.coursesByDifficulty}
           />
           <Breakdown
-            title="Challenges by kind"
+            title={t("Challenges by kind")}
             buckets={metrics.breakdowns.challengesByKind}
           />
           <Breakdown
-            title="Submissions by status"
+            title={t("Submissions by status")}
             buckets={metrics.breakdowns.submissionsByStatus}
           />
           <Breakdown
-            title="Submissions by kind"
+            title={t("Submissions by kind")}
             buckets={metrics.breakdowns.submissionsByKind}
           />
           <Breakdown
-            title="Jobs by status"
+            title={t("Jobs by status")}
             buckets={metrics.breakdowns.jobsByStatus}
           />
           <Breakdown
-            title="Jobs by type"
+            title={t("Jobs by type")}
             buckets={metrics.breakdowns.jobsByType}
           />
           <Breakdown
-            title="Threads by scope"
+            title={t("Threads by scope")}
             buckets={metrics.breakdowns.threadsByScope}
           />
           <Breakdown
-            title="Mentor actions by type"
+            title={t("Mentor actions by type")}
             buckets={metrics.breakdowns.actionsByType}
           />
         </div>

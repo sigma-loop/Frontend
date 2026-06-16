@@ -1,14 +1,22 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { MessageCircle, X, Sparkles, AlertTriangle } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import {
+  MessageCircle,
+  X,
+  Sparkles,
+  AlertTriangle,
+  Trash2,
+} from "lucide-react";
 import MainLayout from "../../components/layouts/MainLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import ChatWidget from "../../components/chat/ChatWidget";
 import { courseService } from "../../services/courseService";
+import { lessonService } from "../../services/lessonService";
 import { useCurriculumJob } from "../../hooks/useCurriculumJob";
 import { ROUTES, buildRoute } from "../../constants/routes";
+import { useLocale } from "../../contexts/LocaleContext";
 import type { Course, SyllabusResponse, MentorAction } from "../../types/api";
 
 /**
@@ -16,11 +24,15 @@ import type { Course, SyllabusResponse, MentorAction } from "../../types/api";
  * Ownership is enforced server-side (non-owned courses 404).
  */
 const CourseDetails: React.FC = () => {
+  const { t } = useLocale();
   const { courseId } = useParams<{ courseId: string }>();
+  const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [syllabus, setSyllabus] = useState<SyllabusResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showChat, setShowChat] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
 
   // "Generate more lessons" — enqueue an EXTEND_COURSE job and poll it.
   const [generateJobId, setGenerateJobId] = useState<string | null>(null);
@@ -75,6 +87,46 @@ const CourseDetails: React.FC = () => {
     }
   };
 
+  const handleDeleteCourse = async () => {
+    if (!courseId || !course) return;
+    if (
+      !window.confirm(
+        t("Delete “{title}” and all its lessons? This can’t be undone.", {
+          title: course.title,
+        })
+      )
+    )
+      return;
+    setIsDeleting(true);
+    try {
+      await courseService.deleteCourse(courseId);
+      navigate(ROUTES.MY_COURSES);
+    } catch (error) {
+      console.error("Failed to delete course:", error);
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId: string, lessonTitle: string) => {
+    if (
+      !window.confirm(
+        t("Delete the lesson “{title}”? This can’t be undone.", {
+          title: lessonTitle,
+        })
+      )
+    )
+      return;
+    setDeletingLessonId(lessonId);
+    try {
+      await lessonService.deleteLesson(lessonId);
+      await fetchCourseData();
+    } catch (error) {
+      console.error("Failed to delete lesson:", error);
+    } finally {
+      setDeletingLessonId(null);
+    }
+  };
+
   // The course mentor can act autonomously — reflect its changes here.
   const handleMentorAction = useCallback(
     (actions: MentorAction[]) => {
@@ -98,7 +150,7 @@ const CourseDetails: React.FC = () => {
 
   if (isLoading) {
     return (
-      <MainLayout title="Loading...">
+      <MainLayout title={t("Loading...")}>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
@@ -108,14 +160,14 @@ const CourseDetails: React.FC = () => {
 
   if (!course || !syllabus) {
     return (
-      <MainLayout title="Course Not Found">
+      <MainLayout title={t("Course Not Found")}>
         <div className="text-center py-12">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Course not found
+            {t("Course not found")}
           </h2>
           <Link to={ROUTES.MY_COURSES}>
             <Button variant="ghost" className="mt-4">
-              Back to my courses
+              {t("Back to my courses")}
             </Button>
           </Link>
         </div>
@@ -127,7 +179,7 @@ const CourseDetails: React.FC = () => {
     switch (status) {
       case "COMPLETED":
         return (
-          <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full text-green-600 dark:text-green-400">
+          <div className="bg-green-50 dark:bg-green-500/10 p-2 rounded-lg text-green-600 dark:text-green-400">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -146,7 +198,7 @@ const CourseDetails: React.FC = () => {
       case "IN_PROGRESS":
       case "UNLOCKED":
         return (
-          <div className="bg-indigo-100 dark:bg-indigo-500/20 p-2 rounded-full text-indigo-600 dark:text-indigo-400">
+          <div className="icon-tile h-9 w-9">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -170,7 +222,7 @@ const CourseDetails: React.FC = () => {
         );
       default:
         return (
-          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full text-gray-400">
+          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-gray-400">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -197,47 +249,50 @@ const CourseDetails: React.FC = () => {
           <div className="flex items-center gap-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3">
             <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
             <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-              This course is still being generated — lessons will appear as
-              they're ready.
+              {t(
+                "This course is still being generated — lessons will appear as they're ready."
+              )}
             </p>
           </div>
         ) : course.status === "FAILED" ? (
           <div className="flex items-center gap-3 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
             <AlertTriangle className="w-5 h-5 text-red-500" />
             <p className="text-sm text-red-700 dark:text-red-300">
-              Generation of this course failed. Ask your mentor to try again.
+              {t(
+                "Generation of this course failed. Ask your mentor to try again."
+              )}
             </p>
           </div>
         ) : null}
 
         {/* Header */}
-        <div className="bg-white dark:bg-[#161b22] rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="glass-panel rounded-xl p-5 sm:p-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <div className="flex items-center space-x-3 mb-2">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse mb-2">
                 <Badge
                   variant={
                     course.difficulty === "BEGINNER" ? "success" : "warning"
                   }
                 >
-                  {course.difficulty}
+                  {t(course.difficulty)}
                 </Badge>
                 <span className="text-gray-500 dark:text-gray-400 text-sm">
-                  {course.meta.lessonCount} Lessons
+                  {t("{count} Lessons", { count: course.meta.lessonCount })}
                 </span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 {course.title}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
                 {course.description}
               </p>
             </div>
-            <div className="mt-4 md:mt-0 text-right">
+            <div className="mt-4 md:mt-0 text-start md:text-end">
               <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                Your Progress
+                {t("Your Progress")}
               </div>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="w-32 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-indigo-600 rounded-full transition-all duration-500"
@@ -254,29 +309,43 @@ const CourseDetails: React.FC = () => {
 
         {/* Syllabus */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Course Syllabus
+              {t("Course Syllabus")}
             </h2>
-            {course.status === "READY" && (
+            <div className="flex flex-wrap items-center gap-2">
+              {course.status === "READY" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateMore}
+                  disabled={isBusyGenerating}
+                  className="flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {isBusyGenerating
+                    ? t("Generating…")
+                    : t("Generate more lessons")}
+                </Button>
+              )}
               <Button
-                variant="outline"
+                variant="danger"
                 size="sm"
-                onClick={handleGenerateMore}
-                disabled={isBusyGenerating}
+                onClick={handleDeleteCourse}
+                disabled={isDeleting}
                 className="flex items-center gap-2"
               >
-                <Sparkles className="w-4 h-4" />
-                {isBusyGenerating ? "Generating…" : "Generate more lessons"}
+                <Trash2 className="w-4 h-4" />
+                {isDeleting ? t("Deleting…") : t("Delete course")}
               </Button>
-            )}
+            </div>
           </div>
 
           {isBusyGenerating && (
             <div className="flex items-center gap-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3 mb-4">
               <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
               <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-                Generating more lessons — they'll appear here when ready.
+                {t("Generating more lessons — they'll appear here when ready.")}
               </p>
             </div>
           )}
@@ -291,14 +360,23 @@ const CourseDetails: React.FC = () => {
                     : "opacity-75 bg-gray-50 dark:bg-[#0d1117]"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {getStatusIcon(lesson.status)}
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="flex-shrink-0">
+                      {getStatusIcon(lesson.status)}
+                    </span>
+                    <h3 className="min-w-0 text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {lesson.orderIndex}. {lesson.title}
                     </h3>
+                    {lesson.generationStatus === "STUB" &&
+                      lesson.status !== "LOCKED" && (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {t("Generates on open")}
+                        </span>
+                      )}
                   </div>
-                  <div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {lesson.status !== "LOCKED" ? (
                       <Link
                         to={buildRoute(ROUTES.LESSON, { lessonId: lesson.id })}
@@ -311,14 +389,28 @@ const CourseDetails: React.FC = () => {
                           }
                           size="sm"
                         >
-                          {lesson.status === "COMPLETED" ? "Review" : "Start"}
+                          {lesson.status === "COMPLETED"
+                            ? t("Review")
+                            : t("Start")}
                         </Button>
                       </Link>
                     ) : (
                       <Button variant="ghost" size="sm" disabled>
-                        Locked
+                        {t("Locked")}
                       </Button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteLesson(lesson.id, lesson.title)
+                      }
+                      disabled={deletingLessonId === lesson.id}
+                      title={t("Delete lesson")}
+                      aria-label={t("Delete lesson")}
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </Card>
@@ -329,11 +421,13 @@ const CourseDetails: React.FC = () => {
 
       {/* Floating Course Mentor Chat */}
       {showChat && (
-        <div className="fixed bottom-0 right-0 z-50 w-full sm:w-[400px] h-[500px] sm:h-[550px] sm:bottom-6 sm:right-6 bg-white dark:bg-[#161b22] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <div className="fixed bottom-0 end-0 z-50 w-full sm:w-[400px] h-[500px] sm:h-[550px] sm:bottom-6 sm:end-6 bg-white dark:bg-[#161b22] rounded-t-xl sm:rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-indigo-600">
             <div className="flex items-center gap-2 text-white">
               <MessageCircle className="w-4 h-4" />
-              <span className="text-sm font-semibold">Course Mentor</span>
+              <span className="text-sm font-semibold">
+                {t("Course Mentor")}
+              </span>
             </div>
             <button
               onClick={() => setShowChat(false)}
@@ -346,9 +440,11 @@ const CourseDetails: React.FC = () => {
             <ChatWidget
               scope="COURSE"
               scopeId={courseId}
-              placeholder="Ask about this course..."
-              welcomeTitle="Course Mentor"
-              welcomeSubtitle={`I can help you navigate "${course?.title}"`}
+              placeholder={t("Ask about this course...")}
+              welcomeTitle={t("Course Mentor")}
+              welcomeSubtitle={t('I can help you navigate "{title}"', {
+                title: course?.title ?? "",
+              })}
               onMentorAction={handleMentorAction}
             />
           </div>
@@ -358,10 +454,10 @@ const CourseDetails: React.FC = () => {
       {!showChat && (
         <button
           onClick={() => setShowChat(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-lg hover:shadow-xl transition-all"
+          className="fixed bottom-6 end-6 z-50 flex items-center gap-2 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm transition-colors"
         >
           <MessageCircle className="w-5 h-5" />
-          Course Mentor
+          {t("Course Mentor")}
         </button>
       )}
     </MainLayout>

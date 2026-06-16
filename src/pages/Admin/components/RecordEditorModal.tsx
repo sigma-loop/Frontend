@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Button from "../../../components/ui/Button";
+import { useLocale } from "../../../contexts/LocaleContext";
 
 interface RecordEditorModalProps {
   title: string;
@@ -21,6 +22,7 @@ const RecordEditorModal: React.FC<RecordEditorModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { t } = useLocale();
   const [text, setText] = useState(() => JSON.stringify(initialValue, null, 2));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -30,7 +32,9 @@ const RecordEditorModal: React.FC<RecordEditorModalProps> = ({
     try {
       parsed = JSON.parse(text);
     } catch (e) {
-      setError("Invalid JSON — " + (e as Error).message);
+      setError(
+        t("Invalid JSON — {message}", { message: (e as Error).message })
+      );
       return;
     }
     setError(null);
@@ -38,7 +42,7 @@ const RecordEditorModal: React.FC<RecordEditorModalProps> = ({
     try {
       await onSave(parsed);
     } catch (e) {
-      setError((e as Error).message || "Failed to save");
+      setError((e as Error).message || t("Failed to save"));
       setSaving(false);
     }
   };
@@ -69,10 +73,10 @@ const RecordEditorModal: React.FC<RecordEditorModalProps> = ({
         </div>
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button onClick={handleSave} isLoading={saving}>
-            Save
+            {t("Save")}
           </Button>
         </div>
       </div>

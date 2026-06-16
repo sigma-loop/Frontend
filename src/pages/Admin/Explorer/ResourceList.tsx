@@ -13,6 +13,7 @@ import {
   REF_FILTER_KEYS,
   REF_FILTER_LABELS,
 } from "../../../constants/adminResources";
+import { useLocale } from "../../../contexts/LocaleContext";
 import { formatNumber } from "../../../utils/formatters";
 import { Plus, X } from "lucide-react";
 
@@ -20,6 +21,7 @@ const selectClass =
   "px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-[#0d1117] dark:text-gray-100";
 
 const ResourceList: React.FC = () => {
+  const { t } = useLocale();
   const { resource = "" } = useParams();
   const meta = ADMIN_RESOURCE_MAP[resource];
   const navigate = useNavigate();
@@ -76,10 +78,10 @@ const ResourceList: React.FC = () => {
 
   if (!meta) {
     return (
-      <AdminLayout title="Explorer">
+      <AdminLayout title={t("Explorer")}>
         <Card>
           <p className="text-gray-500 dark:text-gray-400">
-            Unknown resource "{resource}".
+            {t('Unknown resource "{resource}".', { resource })}
           </p>
         </Card>
       </AdminLayout>
@@ -90,7 +92,10 @@ const ResourceList: React.FC = () => {
     e.stopPropagation();
     if (
       !window.confirm(
-        `Delete this ${meta.singular}? This cascades to any child records and cannot be undone.`
+        t(
+          "Delete this {singular}? This cascades to any child records and cannot be undone.",
+          { singular: meta.singular }
+        )
       )
     )
       return;
@@ -98,7 +103,7 @@ const ResourceList: React.FC = () => {
       await adminService.deleteRecord(resource, id);
       fetchData();
     } catch (err) {
-      alert((err as Error).message || "Delete failed");
+      alert((err as Error).message || t("Delete failed"));
     }
   };
 
@@ -128,13 +133,18 @@ const ResourceList: React.FC = () => {
               {meta.label}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              {formatNumber(total)} record{total === 1 ? "" : "s"} · full read /
-              edit / delete
+              {total === 1
+                ? t("{n} record · full read / edit / delete", {
+                    n: formatNumber(total),
+                  })
+                : t("{n} records · full read / edit / delete", {
+                    n: formatNumber(total),
+                  })}
             </p>
           </div>
           <Button onClick={() => setCreating(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New {meta.singular}
+            <Plus className="w-4 h-4 me-2" />
+            {t("New {singular}", { singular: meta.singular })}
           </Button>
         </div>
 
@@ -144,13 +154,15 @@ const ResourceList: React.FC = () => {
             {meta.searchable && (
               <form onSubmit={submitSearch} className="flex gap-2 flex-1">
                 <Input
-                  placeholder={`Search ${meta.label.toLowerCase()}…`}
+                  placeholder={t("Search {label}…", {
+                    label: meta.label.toLowerCase(),
+                  })}
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                   className="w-full"
                 />
                 <Button type="submit" variant="outline">
-                  Search
+                  {t("Search")}
                 </Button>
               </form>
             )}
@@ -175,7 +187,9 @@ const ResourceList: React.FC = () => {
                     className={selectClass}
                     aria-label={f.label}
                   >
-                    <option value="">All {f.label}</option>
+                    <option value="">
+                      {t("All {label}", { label: f.label })}
+                    </option>
                     {(f.options ?? []).map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label}
@@ -197,7 +211,9 @@ const ResourceList: React.FC = () => {
                   {REF_FILTER_LABELS[c.key] ?? c.key}: {shortId(c.value)}
                   <button
                     onClick={() => updateParam(c.key, "")}
-                    aria-label={`Clear ${REF_FILTER_LABELS[c.key] ?? c.key} filter`}
+                    aria-label={t("Clear {label} filter", {
+                      label: REF_FILTER_LABELS[c.key] ?? c.key,
+                    })}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -217,14 +233,14 @@ const ResourceList: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-white/[0.02]">
-                  <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                  <tr className="text-start text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                     {meta.columns.map((c) => (
                       <th key={c.key} className="px-4 py-3 font-medium">
                         {c.label}
                       </th>
                     ))}
-                    <th className="px-4 py-3 font-medium text-right">
-                      Actions
+                    <th className="px-4 py-3 font-medium text-end">
+                      {t("Actions")}
                     </th>
                   </tr>
                 </thead>
@@ -246,7 +262,7 @@ const ResourceList: React.FC = () => {
                             {renderCell(item as Record<string, unknown>, c)}
                           </td>
                         ))}
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <td className="px-4 py-3 text-end whitespace-nowrap">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -254,13 +270,13 @@ const ResourceList: React.FC = () => {
                             }}
                             className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
                           >
-                            Open
+                            {t("Open")}
                           </button>
                           <button
                             onClick={(e) => handleDelete(id, e)}
-                            className="ml-4 text-red-600 hover:text-red-700 dark:text-red-400"
+                            className="ms-4 text-red-600 hover:text-red-700 dark:text-red-400"
                           >
-                            Delete
+                            {t("Delete")}
                           </button>
                         </td>
                       </tr>
@@ -271,7 +287,7 @@ const ResourceList: React.FC = () => {
             </div>
             {items.length === 0 && (
               <p className="text-center text-gray-400 py-10">
-                No records found.
+                {t("No records found.")}
               </p>
             )}
           </Card>
@@ -280,7 +296,7 @@ const ResourceList: React.FC = () => {
         {/* Pagination */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Page {page} of {pages}
+            {t("Page {page} of {pages}", { page, pages })}
           </p>
           <div className="flex gap-2">
             <Button
@@ -289,7 +305,7 @@ const ResourceList: React.FC = () => {
               disabled={page <= 1}
               onClick={() => updateParam("page", String(page - 1))}
             >
-              Prev
+              {t("Prev")}
             </Button>
             <Button
               variant="outline"
@@ -297,7 +313,7 @@ const ResourceList: React.FC = () => {
               disabled={page >= pages}
               onClick={() => updateParam("page", String(page + 1))}
             >
-              Next
+              {t("Next")}
             </Button>
           </div>
         </div>
@@ -305,8 +321,10 @@ const ResourceList: React.FC = () => {
 
       {creating && (
         <RecordEditorModal
-          title={`New ${meta.singular}`}
-          hint="Edit the JSON, then save. Server-side validation applies. For users, include a plaintext `password` field."
+          title={t("New {singular}", { singular: meta.singular })}
+          hint={t(
+            "Edit the JSON, then save. Server-side validation applies. For users, include a plaintext `password` field."
+          )}
           initialValue={meta.template}
           onClose={() => setCreating(false)}
           onSave={handleCreate}

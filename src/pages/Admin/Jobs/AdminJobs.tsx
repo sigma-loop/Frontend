@@ -4,6 +4,7 @@ import AdminLayout from "../../../components/layouts/AdminLayout";
 import Badge from "../../../components/ui/Badge";
 import Button from "../../../components/ui/Button";
 import { adminService, type AdminJob } from "../../../services/adminService";
+import { useLocale } from "../../../contexts/LocaleContext";
 import { formatRelativeTime } from "../../../utils/formatters";
 
 const STATUS_FILTERS = ["", "PENDING", "GENERATING", "READY", "FAILED"];
@@ -25,6 +26,7 @@ const statusVariant = (status: string) => {
  * ADMIN: inspect curriculum-generation jobs across all users.
  */
 const AdminJobs: React.FC = () => {
+  const { t } = useLocale();
   const [jobs, setJobs] = useState<AdminJob[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -46,16 +48,16 @@ const AdminJobs: React.FC = () => {
   }, [statusFilter]);
 
   return (
-    <AdminLayout title="Curriculum Jobs">
+    <AdminLayout title={t("Curriculum Jobs")}>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-indigo-500" />
-              Curriculum Jobs
+              {t("Curriculum Jobs")}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Generation pipeline across all users.
+              {t("Generation pipeline across all users.")}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -66,7 +68,7 @@ const AdminJobs: React.FC = () => {
             >
               {STATUS_FILTERS.map((s) => (
                 <option key={s} value={s}>
-                  {s || "All statuses"}
+                  {s || t("All statuses")}
                 </option>
               ))}
             </select>
@@ -86,27 +88,27 @@ const AdminJobs: React.FC = () => {
           </div>
         ) : jobs.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400 py-12">
-            No curriculum jobs found.
+            {t("No curriculum jobs found.")}
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
               <thead className="bg-gray-50 dark:bg-white/[0.02]">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
-                    User
+                  <th className="px-4 py-3 text-start font-semibold text-gray-600 dark:text-gray-400">
+                    {t("User")}
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
-                    Prompt
+                  <th className="px-4 py-3 text-start font-semibold text-gray-600 dark:text-gray-400">
+                    {t("Prompt")}
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
-                    Status
+                  <th className="px-4 py-3 text-start font-semibold text-gray-600 dark:text-gray-400">
+                    {t("Status")}
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
-                    Requested
+                  <th className="px-4 py-3 text-start font-semibold text-gray-600 dark:text-gray-400">
+                    {t("Requested")}
                   </th>
-                  <th className="hidden sm:table-cell px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
-                    Error
+                  <th className="hidden sm:table-cell px-4 py-3 text-start font-semibold text-gray-600 dark:text-gray-400">
+                    {t("Error")}
                   </th>
                 </tr>
               </thead>

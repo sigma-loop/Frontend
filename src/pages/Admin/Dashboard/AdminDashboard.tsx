@@ -5,6 +5,7 @@ import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import { Users, Sparkles, CheckCircle2, AlertTriangle } from "lucide-react";
 import { adminService, type AdminJob } from "../../../services/adminService";
+import { useLocale } from "../../../contexts/LocaleContext";
 import { formatRelativeTime } from "../../../utils/formatters";
 
 /**
@@ -12,6 +13,7 @@ import { formatRelativeTime } from "../../../utils/formatters";
  * There is no content management — all courses are AI-generated per user.
  */
 const AdminDashboard: React.FC = () => {
+  const { t } = useLocale();
   const [userCount, setUserCount] = useState(0);
   const [jobs, setJobs] = useState<AdminJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +42,7 @@ const AdminDashboard: React.FC = () => {
 
   const statCards = [
     {
-      label: "Total Users",
+      label: t("Total Users"),
       value: userCount,
       icon: Users,
       color: "text-emerald-600 dark:text-emerald-400",
@@ -48,7 +50,7 @@ const AdminDashboard: React.FC = () => {
       link: "/admin/users",
     },
     {
-      label: "Courses Generated",
+      label: t("Courses Generated"),
       value: readyJobs,
       icon: CheckCircle2,
       color: "text-indigo-600 dark:text-indigo-400",
@@ -56,7 +58,7 @@ const AdminDashboard: React.FC = () => {
       link: "/admin/jobs",
     },
     {
-      label: "Failed Generations",
+      label: t("Failed Generations"),
       value: failedJobs,
       icon: AlertTriangle,
       color: "text-red-600 dark:text-red-400",
@@ -89,14 +91,14 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <AdminLayout title="Overview">
+    <AdminLayout title={t("Overview")}>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Admin Overview
+            {t("Admin Overview")}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Welcome to the SigmaLoop administration panel.
+            {t("Welcome to the SigmaLoop administration panel.")}
           </p>
         </div>
 
@@ -105,7 +107,7 @@ const AdminDashboard: React.FC = () => {
           {statCards.map((stat) => (
             <Link key={stat.label} to={stat.link}>
               <Card className="hover:border-gray-300 dark:hover:border-gray-700 transition-colors cursor-pointer">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 rtl:space-x-reverse">
                   <div
                     className={`inline-flex items-center justify-center h-11 w-11 rounded-lg ${stat.bg} ${stat.color}`}
                   >
@@ -130,20 +132,20 @@ const AdminDashboard: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-500" />
-              Recent Curriculum Jobs
+              {t("Recent Curriculum Jobs")}
             </h2>
             <Link
               to="/admin/jobs"
               className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium"
             >
-              View all
+              {t("View all")}
             </Link>
           </div>
 
           {jobs.length === 0 ? (
             <Card>
               <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                No curriculum jobs yet.
+                {t("No curriculum jobs yet.")}
               </p>
             </Card>
           ) : (
@@ -156,7 +158,7 @@ const AdminDashboard: React.FC = () => {
                         {job.prompt}
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {job.user?.email || "Unknown user"} ·{" "}
+                        {job.user?.email || t("Unknown user")} ·{" "}
                         {formatRelativeTime(job.createdAt)}
                       </p>
                     </div>

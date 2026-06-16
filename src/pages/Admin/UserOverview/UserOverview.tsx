@@ -8,12 +8,14 @@ import StatCard from "../components/StatCard";
 import { badgeVariant, refValue } from "../components/cells";
 import { adminService } from "../../../services/adminService";
 import type { AdminUserOverview } from "../../../types/api";
+import { useLocale } from "../../../contexts/LocaleContext";
 import { formatNumber, formatRelativeTime } from "../../../utils/formatters";
 import { ArrowLeft, CheckCircle2, Circle, Pencil, Trash2 } from "lucide-react";
 
 const str = (v: unknown): string => (v == null ? "" : String(v));
 
 const UserOverview: React.FC = () => {
+  const { t } = useLocale();
   const { userId = "" } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState<AdminUserOverview | null>(null);
@@ -38,7 +40,9 @@ const UserOverview: React.FC = () => {
   const handleDelete = async () => {
     if (
       !window.confirm(
-        "Delete this user and ALL their data (courses, lessons, challenges, submissions, chats, jobs)? This cannot be undone."
+        t(
+          "Delete this user and ALL their data (courses, lessons, challenges, submissions, chats, jobs)? This cannot be undone."
+        )
       )
     )
       return;
@@ -46,13 +50,13 @@ const UserOverview: React.FC = () => {
       await adminService.deleteRecord("users", userId);
       navigate("/admin/data/users");
     } catch (e) {
-      alert((e as Error).message || "Delete failed");
+      alert((e as Error).message || t("Delete failed"));
     }
   };
 
   if (loading) {
     return (
-      <AdminLayout title="User 360°">
+      <AdminLayout title={t("User 360°")}>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400" />
         </div>
@@ -62,9 +66,11 @@ const UserOverview: React.FC = () => {
 
   if (!data) {
     return (
-      <AdminLayout title="User 360°">
+      <AdminLayout title={t("User 360°")}>
         <Card>
-          <p className="text-gray-500 dark:text-gray-400">User not found.</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            {t("User not found.")}
+          </p>
         </Card>
       </AdminLayout>
     );
@@ -73,7 +79,7 @@ const UserOverview: React.FC = () => {
   const user = data.user as Record<string, unknown>;
   const profile = (user.profileData as Record<string, unknown> | null) ?? {};
   const stats = (user.stats as Record<string, unknown> | null) ?? {};
-  const name = str(profile.name) || "Unknown user";
+  const name = str(profile.name) || t("Unknown user");
   const role = str(user.role) || "STUDENT";
 
   const counts: {
@@ -82,53 +88,53 @@ const UserOverview: React.FC = () => {
     to?: string;
   }[] = [
     {
-      label: "Courses",
+      label: t("Courses"),
       key: "courses",
       to: `/admin/data/courses?userId=${userId}`,
     },
     {
-      label: "Lessons",
+      label: t("Lessons"),
       key: "lessons",
       to: `/admin/data/lessons?userId=${userId}`,
     },
     {
-      label: "Challenges",
+      label: t("Challenges"),
       key: "challenges",
       to: `/admin/data/challenges?userId=${userId}`,
     },
     {
-      label: "Submissions",
+      label: t("Submissions"),
       key: "submissions",
       to: `/admin/data/submissions?userId=${userId}`,
     },
     {
-      label: "Completed lessons",
+      label: t("Completed lessons"),
       key: "completedLessons",
       to: `/admin/data/progress?userId=${userId}&isCompleted=true`,
     },
     {
-      label: "Threads",
+      label: t("Threads"),
       key: "threads",
       to: `/admin/data/threads?userId=${userId}`,
     },
-    { label: "Messages", key: "messages" },
-    { label: "Jobs", key: "jobs", to: `/admin/data/jobs?userId=${userId}` },
+    { label: t("Messages"), key: "messages" },
+    { label: t("Jobs"), key: "jobs", to: `/admin/data/jobs?userId=${userId}` },
     {
-      label: "Mentor actions",
+      label: t("Mentor actions"),
       key: "actions",
       to: `/admin/data/actions?userId=${userId}`,
     },
   ];
 
   return (
-    <AdminLayout title="User 360°">
+    <AdminLayout title={t("User 360°")}>
       <div className="space-y-8">
         <button
           onClick={() => navigate("/admin/data/users")}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Users
+          <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+          {t("Back to Users")}
         </button>
 
         {/* Header */}
@@ -146,11 +152,23 @@ const UserOverview: React.FC = () => {
               </p>
               <p className="text-xs text-gray-400 mt-1 break-all">{userId}</p>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
-                <span>XP: {str(stats.totalXp) || 0}</span>
-                <span>Streak: {str(stats.streakDays) || 0} days</span>
-                <span>Lessons done: {str(stats.lessonsCompleted) || 0}</span>
+                <span>{t("XP: {xp}", { xp: str(stats.totalXp) || 0 })}</span>
+                <span>
+                  {t("Streak: {days} days", {
+                    days: str(stats.streakDays) || 0,
+                  })}
+                </span>
+                <span>
+                  {t("Lessons done: {count}", {
+                    count: str(stats.lessonsCompleted) || 0,
+                  })}
+                </span>
                 {!!user.createdAt && (
-                  <span>Joined {formatRelativeTime(str(user.createdAt))}</span>
+                  <span>
+                    {t("Joined {when}", {
+                      when: formatRelativeTime(str(user.createdAt)),
+                    })}
+                  </span>
                 )}
               </div>
             </div>
@@ -159,16 +177,16 @@ const UserOverview: React.FC = () => {
                 variant="outline"
                 onClick={() => navigate(`/admin/data/users/${userId}`)}
               >
-                <Pencil className="w-4 h-4 mr-2" />
-                Edit
+                <Pencil className="w-4 h-4 me-2" />
+                {t("Edit")}
               </Button>
               <Button
                 variant="ghost"
                 className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                 onClick={handleDelete}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+                <Trash2 className="w-4 h-4 me-2" />
+                {t("Delete")}
               </Button>
             </div>
           </div>
@@ -189,12 +207,12 @@ const UserOverview: React.FC = () => {
         {/* Course tree */}
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-            Courses, lessons & challenges
+            {t("Courses, lessons & challenges")}
           </h2>
           {data.courses.length === 0 ? (
             <Card>
               <p className="text-gray-500 dark:text-gray-400">
-                No courses generated for this user yet.
+                {t("No courses generated for this user yet.")}
               </p>
             </Card>
           ) : (
@@ -222,7 +240,9 @@ const UserOverview: React.FC = () => {
                     </div>
                   </div>
                   {course.lessons.length === 0 ? (
-                    <p className="text-sm text-gray-400 mt-3">No lessons.</p>
+                    <p className="text-sm text-gray-400 mt-3">
+                      {t("No lessons.")}
+                    </p>
                   ) : (
                     <ul className="mt-3 space-y-2">
                       {course.lessons.map((lesson) => (
@@ -241,7 +261,7 @@ const UserOverview: React.FC = () => {
                               className="text-sm text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400"
                             >
                               {str(lesson.orderIndex) !== "" && (
-                                <span className="text-gray-400 mr-1">
+                                <span className="text-gray-400 me-1">
                                   {String(lesson.orderIndex)}.
                                 </span>
                               )}
@@ -281,20 +301,22 @@ const UserOverview: React.FC = () => {
         {/* Recent submissions */}
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-            Recent submissions
+            {t("Recent submissions")}
           </h2>
           <Card className="!p-0">
             {data.recentSubmissions.length === 0 ? (
-              <p className="text-gray-400 p-6">No submissions.</p>
+              <p className="text-gray-400 p-6">{t("No submissions.")}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-white/[0.02]">
-                    <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
-                      <th className="px-4 py-3 font-medium">Kind</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Challenge</th>
-                      <th className="px-4 py-3 font-medium">When</th>
+                    <tr className="text-start text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                      <th className="px-4 py-3 font-medium">{t("Kind")}</th>
+                      <th className="px-4 py-3 font-medium">{t("Status")}</th>
+                      <th className="px-4 py-3 font-medium">
+                        {t("Challenge")}
+                      </th>
+                      <th className="px-4 py-3 font-medium">{t("When")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -338,13 +360,13 @@ const UserOverview: React.FC = () => {
 
         {/* Threads + Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card title="Chat threads">
+          <Card title={t("Chat threads")}>
             {data.threads.length === 0 ? (
-              <p className="text-gray-400">No chat threads.</p>
+              <p className="text-gray-400">{t("No chat threads.")}</p>
             ) : (
               <ul className="space-y-2">
-                {data.threads.map((t) => {
-                  const thread = t as Record<string, unknown>;
+                {data.threads.map((threadItem) => {
+                  const thread = threadItem as Record<string, unknown>;
                   return (
                     <li key={str(thread._id)}>
                       <Link
@@ -352,7 +374,7 @@ const UserOverview: React.FC = () => {
                         className="flex items-center justify-between gap-2 hover:text-indigo-600 dark:hover:text-indigo-400"
                       >
                         <span className="text-sm text-gray-800 dark:text-gray-200 truncate">
-                          {str(thread.title) || "Untitled"}
+                          {str(thread.title) || t("Untitled")}
                         </span>
                         <Badge variant={badgeVariant(str(thread.scope))}>
                           {str(thread.scope)}
@@ -365,9 +387,9 @@ const UserOverview: React.FC = () => {
             )}
           </Card>
 
-          <Card title="Mentor actions">
+          <Card title={t("Mentor actions")}>
             {data.actions.length === 0 ? (
-              <p className="text-gray-400">No mentor actions.</p>
+              <p className="text-gray-400">{t("No mentor actions.")}</p>
             ) : (
               <ul className="space-y-3">
                 {data.actions.map((a) => {
@@ -394,9 +416,9 @@ const UserOverview: React.FC = () => {
         </div>
 
         {/* Jobs */}
-        <Card title="Curriculum jobs">
+        <Card title={t("Curriculum jobs")}>
           {data.jobs.length === 0 ? (
-            <p className="text-gray-400">No curriculum jobs.</p>
+            <p className="text-gray-400">{t("No curriculum jobs.")}</p>
           ) : (
             <ul className="space-y-2">
               {data.jobs.map((j) => {

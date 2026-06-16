@@ -70,7 +70,7 @@ export const MessageContent: React.FC<{ content: string }> = ({ content }) => (
       },
       th({ children }) {
         return (
-          <th className="px-3 py-2 text-left font-semibold bg-gray-50 dark:bg-gray-800/80">
+          <th className="px-3 py-2 text-start font-semibold bg-gray-50 dark:bg-gray-800/80">
             {children}
           </th>
         );

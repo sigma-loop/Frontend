@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LocaleProvider } from "./contexts/LocaleContext";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import Dashboard from "./pages/Dashboard/Dashboard";
@@ -16,11 +17,13 @@ import CourseDetails from "./pages/Course/CourseDetails";
 import Home from "./pages/Home/Home";
 import LessonView from "./pages/Lesson/LessonView";
 import Mentor from "./pages/Mentor/Mentor";
+import Settings from "./pages/Settings/Settings";
 
-// Admin Pages
-import AdminDashboard from "./pages/Admin/Dashboard/AdminDashboard";
-import AdminUsers from "./pages/Admin/Users/AdminUsers";
-import AdminJobs from "./pages/Admin/Jobs/AdminJobs";
+// Admin Pages — GOD panel
+import CommandCenter from "./pages/Admin/CommandCenter/CommandCenter";
+import ResourceList from "./pages/Admin/Explorer/ResourceList";
+import ResourceDetail from "./pages/Admin/Explorer/ResourceDetail";
+import UserOverview from "./pages/Admin/UserOverview/UserOverview";
 
 // Protected Route Wrapper
 const ProtectedRoute = () => {
@@ -57,32 +60,58 @@ function App() {
     <ThemeProvider>
       <Router>
         <AuthProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route element={<PublicRoute />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-            </Route>
+          <LocaleProvider>
+            <Routes>
+              {/* Public Routes */}
+              <Route element={<PublicRoute />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+              </Route>
 
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/onboarding" element={<Onboarding />} />
+              {/* Mentor — open to guests AND authenticated users. The page itself
+                branches: guests get a tool-less chat with signup CTAs; signed-in
+                users get the full tool-using mentor. */}
               <Route path="/mentor" element={<Mentor />} />
-              <Route path="/my-courses" element={<MyCourses />} />
-              <Route path="/courses/:courseId" element={<CourseDetails />} />
-              <Route path="/lessons/:lessonId" element={<LessonView />} />
 
-              {/* Admin Routes (AdminLayout enforces the ADMIN role) */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
-              <Route path="/admin/jobs" element={<AdminJobs />} />
-            </Route>
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/my-courses" element={<MyCourses />} />
+                <Route path="/courses/:courseId" element={<CourseDetails />} />
+                <Route path="/lessons/:lessonId" element={<LessonView />} />
 
-            {/* 404 fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+                {/* Admin GOD panel (AdminLayout enforces the ADMIN role) */}
+                <Route path="/admin" element={<CommandCenter />} />
+                <Route
+                  path="/admin/data/:resource"
+                  element={<ResourceList />}
+                />
+                <Route
+                  path="/admin/data/:resource/:id"
+                  element={<ResourceDetail />}
+                />
+                <Route
+                  path="/admin/overview/:userId"
+                  element={<UserOverview />}
+                />
+                {/* Legacy admin paths → new explorer */}
+                <Route
+                  path="/admin/users"
+                  element={<Navigate to="/admin/data/users" replace />}
+                />
+                <Route
+                  path="/admin/jobs"
+                  element={<Navigate to="/admin/data/jobs" replace />}
+                />
+              </Route>
+
+              {/* 404 fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </LocaleProvider>
         </AuthProvider>
       </Router>
     </ThemeProvider>

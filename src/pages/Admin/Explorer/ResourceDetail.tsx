@@ -10,6 +10,7 @@ import { refId } from "../components/cells";
 import { adminService } from "../../../services/adminService";
 import type { AdminAncestor, AdminRecord } from "../../../types/api";
 import { ADMIN_RESOURCE_MAP } from "../../../constants/adminResources";
+import { useLocale } from "../../../contexts/LocaleContext";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 
 /**
@@ -66,6 +67,7 @@ const SECONDARY_LINKS: Record<
 };
 
 const FieldValue: React.FC<{ value: unknown }> = ({ value }) => {
+  const { t } = useLocale();
   if (value === null || value === undefined)
     return <span className="text-gray-400">null</span>;
   if (typeof value === "boolean")
@@ -75,7 +77,7 @@ const FieldValue: React.FC<{ value: unknown }> = ({ value }) => {
   if (typeof value === "object")
     return (
       <div className="mt-1">
-        <JsonBlock value={value} label="nested object" defaultCollapsed />
+        <JsonBlock value={value} label={t("nested object")} defaultCollapsed />
       </div>
     );
   const s = String(value);
@@ -91,6 +93,7 @@ const FieldValue: React.FC<{ value: unknown }> = ({ value }) => {
 };
 
 const ResourceDetail: React.FC = () => {
+  const { t } = useLocale();
   const { resource = "", id = "" } = useParams();
   const meta = ADMIN_RESOURCE_MAP[resource];
   const navigate = useNavigate();
@@ -128,9 +131,10 @@ const ResourceDetail: React.FC = () => {
   const handleDelete = async () => {
     if (
       !window.confirm(
-        `Delete this ${
-          meta?.singular ?? "record"
-        }? This cascades to any child records and cannot be undone.`
+        t(
+          "Delete this {singular}? This cascades to any child records and cannot be undone.",
+          { singular: meta?.singular ?? t("record") }
+        )
       )
     )
       return;
@@ -138,7 +142,7 @@ const ResourceDetail: React.FC = () => {
       await adminService.deleteRecord(resource, id);
       navigate(`/admin/data/${resource}`);
     } catch (e) {
-      alert((e as Error).message || "Delete failed");
+      alert((e as Error).message || t("Delete failed"));
     }
   };
 
@@ -148,34 +152,34 @@ const ResourceDetail: React.FC = () => {
   if (record) {
     const r = record as Record<string, unknown>;
     if (resource === "users")
-      links.push({ label: "360° overview", to: `/admin/overview/${id}` });
+      links.push({ label: t("360° overview"), to: `/admin/overview/${id}` });
     else if (r.userId)
       links.push({
-        label: "Owner 360°",
+        label: t("Owner 360°"),
         to: `/admin/overview/${refId(r.userId)}`,
       });
     for (const d of DRILL_DOWNS[resource] ?? [])
       links.push({
-        label: `All ${d.label}`,
+        label: t("All {label}", { label: d.label }),
         to: `/admin/data/${d.resource}?${d.param}=${id}`,
       });
     for (const s of SECONDARY_LINKS[resource] ?? [])
       if (r[s.field])
         links.push({
-          label: s.label,
+          label: t(s.label),
           to: `/admin/data/${s.resource}/${refId(r[s.field])}`,
         });
   }
 
   return (
-    <AdminLayout title={meta ? meta.singular : "Record"}>
+    <AdminLayout title={meta ? meta.singular : t("Record")}>
       <div className="space-y-6">
         <button
           onClick={() => navigate(`/admin/data/${resource}`)}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to {meta?.label ?? resource}
+          <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+          {t("Back to {label}", { label: meta?.label ?? resource })}
         </button>
 
         {loading ? (
@@ -185,7 +189,7 @@ const ResourceDetail: React.FC = () => {
         ) : !record ? (
           <Card>
             <p className="text-gray-500 dark:text-gray-400">
-              Record not found.
+              {t("Record not found.")}
             </p>
           </Card>
         ) : (
@@ -231,16 +235,16 @@ const ResourceDetail: React.FC = () => {
               </div>
               <div className="flex gap-2 flex-shrink-0">
                 <Button variant="outline" onClick={() => setEditing(true)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Edit
+                  <Pencil className="w-4 h-4 me-2" />
+                  {t("Edit")}
                 </Button>
                 <Button
                   variant="ghost"
                   className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                   onClick={handleDelete}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  <Trash2 className="w-4 h-4 me-2" />
+                  {t("Delete")}
                 </Button>
               </div>
             </div>
@@ -259,7 +263,7 @@ const ResourceDetail: React.FC = () => {
               </div>
             )}
 
-            <Card title="Fields">
+            <Card title={t("Fields")}>
               <dl className="divide-y divide-gray-200 dark:divide-gray-800">
                 {Object.entries(record).map(([key, value]) => (
                   <div
@@ -277,15 +281,19 @@ const ResourceDetail: React.FC = () => {
               </dl>
             </Card>
 
-            <JsonBlock value={record} label="Raw document" />
+            <JsonBlock value={record} label={t("Raw document")} />
           </>
         )}
       </div>
 
       {editing && record && (
         <RecordEditorModal
-          title={`Edit ${meta?.singular ?? "record"}`}
-          hint="Edit any field as JSON. Server-side validation applies. For users, add a plaintext `password` field to reset the password."
+          title={t("Edit {singular}", {
+            singular: meta?.singular ?? t("record"),
+          })}
+          hint={t(
+            "Edit any field as JSON. Server-side validation applies. For users, add a plaintext `password` field to reset the password."
+          )}
           initialValue={record as Record<string, unknown>}
           onClose={() => setEditing(false)}
           onSave={handleSave}

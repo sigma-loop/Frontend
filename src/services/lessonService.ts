@@ -4,6 +4,7 @@ import {
   type Lesson,
   type ExecutionResult,
   type SubmissionResult,
+  type LessonTranslationResult,
 } from "../types/api";
 
 export interface CodeExecutionPayload {
@@ -28,6 +29,42 @@ export const lessonService = {
       `/lessons/course/${courseId}`
     );
     return response.data.data || [];
+  },
+
+  // Materialize a lazily-generated ("generate on open") lesson. The request is
+  // held open while the server generates the body + challenges, then resolves
+  // with the READY lesson. If another request is already generating it, the
+  // server returns the current GENERATING state instead (caller should poll).
+  generateLesson: async (lessonId: string): Promise<Lesson> => {
+    const response = await api.post<JSendResponse<Lesson>>(
+      `/lessons/${lessonId}/generate`
+    );
+    if (!response.data.data) {
+      throw new Error("Lesson generation failed");
+    }
+    return response.data.data;
+  },
+
+  // Delete an owned lesson and its challenges/submissions/progress.
+  deleteLesson: async (lessonId: string): Promise<void> => {
+    await api.delete(`/lessons/${lessonId}`);
+  },
+
+  // Translate a lesson's prose (title, body, challenge statements) into the
+  // given language. Cached server-side per (lesson, language), so a re-request
+  // is fast. Code, LaTeX, and answer keys are preserved.
+  translateLesson: async (
+    lessonId: string,
+    language: string
+  ): Promise<LessonTranslationResult> => {
+    const response = await api.post<JSendResponse<LessonTranslationResult>>(
+      `/lessons/${lessonId}/translate`,
+      { language }
+    );
+    if (!response.data.data) {
+      throw new Error("Lesson translation failed");
+    }
+    return response.data.data;
   },
 
   // ── PROGRAMMING challenges (Judge0) ──

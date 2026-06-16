@@ -17,6 +17,7 @@ import Button from "../../../components/ui/Button";
 import { cn } from "../../../utils/cn";
 import { mcqService } from "../../../services/mcqService";
 import type { MCQChallenge, MCQSubmissionResult } from "../../../types/api";
+import { useLocale } from "../../../contexts/LocaleContext";
 
 const remarkPlugins = [remarkGfm, remarkMath];
 const rehypePlugins = [rehypeKatex, rehypeHighlight];
@@ -30,7 +31,11 @@ interface MCQWorkspaceProps {
  * Workspace for MCQ challenges: single- or multi-select, graded deterministically
  * on the server. The correct options / explanations are only known after submit.
  */
-const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) => {
+const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({
+  challenge,
+  onCompleted,
+}) => {
+  const { t } = useLocale();
   const challengeId = challenge.id;
   const storageKey = `sigmaloop_mcq_${challengeId}`;
 
@@ -107,22 +112,24 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
   const verdictLabel = !result
     ? ""
     : result.verdict.correct
-      ? "Correct"
+      ? t("Correct")
       : result.verdict.partial
-        ? "Partially correct"
-        : "Incorrect";
+        ? t("Partially correct")
+        : t("Incorrect");
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-[#161b22] border-l border-gray-200 dark:border-gray-800">
+    <div className="flex flex-col h-full bg-white dark:bg-[#161b22] border-s border-gray-200 dark:border-gray-800">
       {/* Header */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161b22] shadow-sm z-10">
         <div className="flex items-center gap-2">
           <ListChecks className="w-4 h-4 text-indigo-500" />
           <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
-            Quiz
+            {t("Quiz")}
           </span>
-          <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
-            {challenge.allowMultiple ? "Select all that apply" : "Select one"}
+          <span className="text-xs text-gray-400 dark:text-gray-500 ms-1">
+            {challenge.allowMultiple
+              ? t("Select all that apply")
+              : t("Select one")}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -134,7 +141,7 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
               className="flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
-              Try again
+              {t("Try again")}
             </Button>
           ) : (
             <Button
@@ -144,7 +151,7 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
             >
               <Send className="w-4 h-4" />
-              Submit
+              {t("Submit")}
             </Button>
           )}
         </div>
@@ -155,7 +162,7 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
         <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/30 border-b border-green-200 dark:border-green-800 animate-pulse">
           <Trophy className="w-5 h-5 text-green-600 dark:text-green-400" />
           <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-            Lesson Complete! +50 XP
+            {t("Lesson Complete! +50 XP")}
           </span>
         </div>
       )}
@@ -163,7 +170,10 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
       {/* Prompt + options */}
       <div className="flex-1 min-h-0 overflow-y-auto p-5">
         <div className="prose prose-slate dark:prose-invert max-w-none mb-5">
-          <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+          <ReactMarkdown
+            remarkPlugins={remarkPlugins}
+            rehypePlugins={rehypePlugins}
+          >
             {challenge.prompt}
           </ReactMarkdown>
         </div>
@@ -179,12 +189,12 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
             const stateClass = !submitted
               ? isSelected
                 ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"
-                : "border-gray-200 dark:border-gray-700 hover:border-indigo-300"
+                : "border-gray-200 dark:border-gray-800 hover:border-indigo-300"
               : isCorrect
                 ? "border-green-500 bg-green-50 dark:bg-green-900/20"
                 : isSelected
                   ? "border-red-500 bg-red-50 dark:bg-red-900/20"
-                  : "border-gray-200 dark:border-gray-700 opacity-70";
+                  : "border-gray-200 dark:border-gray-800 opacity-70";
 
             return (
               <button
@@ -193,7 +203,7 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
                 onClick={() => toggleOption(opt.id)}
                 disabled={submitted}
                 className={cn(
-                  "w-full text-left rounded-xl border p-3 transition-colors flex gap-3 items-start",
+                  "w-full text-start rounded-lg border p-3 transition-colors flex gap-3 items-start",
                   stateClass,
                   submitted ? "cursor-default" : "cursor-pointer"
                 )}
@@ -209,7 +219,9 @@ const MCQWorkspace: React.FC<MCQWorkspaceProps> = ({ challenge, onCompleted }) =
                       <span
                         className={cn(
                           "block w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600",
-                          challenge.allowMultiple ? "rounded-md" : "rounded-full"
+                          challenge.allowMultiple
+                            ? "rounded-md"
+                            : "rounded-full"
                         )}
                       />
                     )

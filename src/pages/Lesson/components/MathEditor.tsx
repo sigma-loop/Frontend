@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { MathfieldElement } from "mathlive";
 import { Eye, EyeOff, Keyboard } from "lucide-react";
+import { useLocale } from "../../../contexts/LocaleContext";
 
 // MathLive loads its fonts (and optionally sounds) at runtime. The fonts are
 // copied into /public/mathlive/fonts so Vite serves them at this path.
@@ -19,6 +20,7 @@ interface MathEditorProps {
  * LaTeX — but the field still emits LaTeX, so the submission pipeline is unchanged.
  */
 const MathEditor: React.FC<MathEditorProps> = ({ value, onChange }) => {
+  const { t } = useLocale();
   const hostRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<MathfieldElement | null>(null);
   const [showLatex, setShowLatex] = useState(false);
@@ -91,9 +93,7 @@ const MathEditor: React.FC<MathEditorProps> = ({ value, onChange }) => {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-[#0d1117] border-b border-gray-200 dark:border-gray-800">
-        <span className="eyebrow">
-          Your Answer
-        </span>
+        <span className="eyebrow">{t("Your Answer")}</span>
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -101,7 +101,7 @@ const MathEditor: React.FC<MathEditorProps> = ({ value, onChange }) => {
             className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
           >
             <Keyboard className="w-3.5 h-3.5" />
-            Math Keyboard
+            {t("Math Keyboard")}
           </button>
           <button
             type="button"
@@ -113,7 +113,7 @@ const MathEditor: React.FC<MathEditorProps> = ({ value, onChange }) => {
             ) : (
               <Eye className="w-3.5 h-3.5" />
             )}
-            {showLatex ? "Hide" : "Show"} LaTeX
+            {showLatex ? t("Hide LaTeX") : t("Show LaTeX")}
           </button>
         </div>
       </div>
@@ -127,7 +127,7 @@ const MathEditor: React.FC<MathEditorProps> = ({ value, onChange }) => {
         {/* Custom placeholder — see note in the field effect above. */}
         {!value.trim() && (
           <span className="pointer-events-none absolute left-4 top-4 text-[1.25rem] leading-none text-gray-400 dark:text-gray-500 select-none">
-            Type your answer or use the math keyboard…
+            {t("Type your answer or use the math keyboard…")}
           </span>
         )}
       </div>
@@ -136,9 +136,7 @@ const MathEditor: React.FC<MathEditorProps> = ({ value, onChange }) => {
       {showLatex && (
         <div className="border-t border-gray-200 dark:border-gray-800">
           <div className="px-3 py-1.5 bg-gray-50 dark:bg-[#0d1117] border-b border-gray-200 dark:border-gray-800">
-            <span className="eyebrow">
-              LaTeX Source
-            </span>
+            <span className="eyebrow">{t("LaTeX Source")}</span>
           </div>
           <div className="p-3 bg-white dark:bg-[#0d1117] max-h-[120px] overflow-y-auto">
             <code className="text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-all">
