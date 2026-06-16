@@ -15,6 +15,11 @@ export const ROUTES = {
   COURSE_DETAILS: "/courses/:courseId",
   LESSON: "/lessons/:lessonId",
 
+  // Legal / informational (public — reachable by guests and members alike)
+  TERMS: "/terms",
+  PRIVACY: "/privacy",
+  CONTACT: "/contact",
+
   // Admin — GOD panel
   ADMIN: "/admin",
   ADMIN_DASHBOARD: "/admin",

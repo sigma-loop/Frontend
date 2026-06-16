@@ -18,6 +18,9 @@ import Home from "./pages/Home/Home";
 import LessonView from "./pages/Lesson/LessonView";
 import Mentor from "./pages/Mentor/Mentor";
 import Settings from "./pages/Settings/Settings";
+import Terms from "./pages/Legal/Terms";
+import Privacy from "./pages/Legal/Privacy";
+import Contact from "./pages/Legal/Contact";
 
 // Admin Pages — GOD panel
 import CommandCenter from "./pages/Admin/CommandCenter/CommandCenter";
@@ -74,6 +77,11 @@ function App() {
                 branches: guests get a tool-less chat with signup CTAs; signed-in
                 users get the full tool-using mentor. */}
               <Route path="/mentor" element={<Mentor />} />
+
+              {/* Legal / informational — public, reachable by guests and members */}
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/contact" element={<Contact />} />
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
