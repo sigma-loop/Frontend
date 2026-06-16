@@ -8,6 +8,8 @@ import {
   Trash2,
   Lock,
   Eye,
+  Plus,
+  Dumbbell,
 } from "lucide-react";
 import MainLayout from "../../components/layouts/MainLayout";
 import Card from "../../components/ui/Card";
@@ -50,9 +52,14 @@ const CourseDetails: React.FC = () => {
   const [lockMode, setLockMode] = useState<LessonLockMode>("PROGRESS");
   const [switchingMode, setSwitchingMode] = useState(false);
 
-  // "Generate more lessons" — enqueue an EXTEND_COURSE job and poll it.
+  // "Generate more lessons" / "Generate practice challenges" — both enqueue a
+  // curriculum job and poll it through the same hook. `pendingAction` only
+  // drives which banner copy shows while a job is in flight.
   const [generateJobId, setGenerateJobId] = useState<string | null>(null);
   const [isRequestingMore, setIsRequestingMore] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    "lessons" | "challenges" | null
+  >(null);
   const { job: moreJob, isGenerating: moreGenerating } =
     useCurriculumJob(generateJobId);
 
@@ -102,27 +109,47 @@ const CourseDetails: React.FC = () => {
     fetchCourseData();
   }, [fetchCourseData]);
 
-  // When a generate-more job finishes, refresh the syllabus.
+  // When a generate-more / generate-challenges job finishes, refresh the syllabus.
   useEffect(() => {
     if (!moreJob) return;
     if (moreJob.status === "READY") {
       setGenerateJobId(null);
+      setPendingAction(null);
       fetchCourseData();
     } else if (moreJob.status === "FAILED") {
       setGenerateJobId(null);
+      setPendingAction(null);
     }
   }, [moreJob, fetchCourseData]);
 
   const isBusyGenerating = moreGenerating || isRequestingMore;
 
   const handleGenerateMore = async () => {
-    if (!courseId) return;
+    if (!courseId || isBusyGenerating) return;
     setIsRequestingMore(true);
+    setPendingAction("lessons");
     try {
+      // Count is left to the backend default (admin-tunable, ≥5).
       const job = await courseService.generateMore(courseId);
       setGenerateJobId(job.id);
     } catch (error) {
       console.error("Failed to request more lessons:", error);
+      setPendingAction(null);
+    } finally {
+      setIsRequestingMore(false);
+    }
+  };
+
+  const handleGenerateChallenges = async () => {
+    if (!courseId || isBusyGenerating) return;
+    setIsRequestingMore(true);
+    setPendingAction("challenges");
+    try {
+      const job = await courseService.generateChallenges(courseId);
+      setGenerateJobId(job.id);
+    } catch (error) {
+      console.error("Failed to request practice challenges:", error);
+      setPendingAction(null);
     } finally {
       setIsRequestingMore(false);
     }
@@ -310,7 +337,7 @@ const CourseDetails: React.FC = () => {
         <div className="glass-panel rounded-xl p-5 sm:p-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <div className="flex items-center space-x-3 rtl:space-x-reverse mb-2">
+              <div className="flex items-center gap-x-3 mb-2">
                 <Badge
                   variant={
                     course.difficulty === "BEGINNER" ? "success" : "warning"
@@ -333,7 +360,7 @@ const CourseDetails: React.FC = () => {
               <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">
                 {t("Your Progress")}
               </div>
-              <div className="flex items-center space-x-3 rtl:space-x-reverse">
+              <div className="flex items-center gap-x-3">
                 <div className="w-32 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-indigo-600 rounded-full transition-all duration-500"
@@ -355,20 +382,6 @@ const CourseDetails: React.FC = () => {
               {t("Course Syllabus")}
             </h2>
             <div className="flex flex-wrap items-center gap-2">
-              {course.status === "READY" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateMore}
-                  disabled={isBusyGenerating}
-                  className="flex items-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  {isBusyGenerating
-                    ? t("Generating…")
-                    : t("Generate more lessons")}
-                </Button>
-              )}
               <Button
                 variant="danger"
                 size="sm"
@@ -386,7 +399,13 @@ const CourseDetails: React.FC = () => {
             <div className="flex items-center gap-3 rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-3 mb-4">
               <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
               <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-                {t("Generating more lessons — they'll appear here when ready.")}
+                {pendingAction === "challenges"
+                  ? t(
+                      "Generating a practice challenge set — it'll appear here when ready."
+                    )
+                  : t(
+                      "Generating more lessons — they'll appear here when ready."
+                    )}
               </p>
             </div>
           )}
@@ -459,6 +478,12 @@ const CourseDetails: React.FC = () => {
                     <h3 className="min-w-0 text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {lesson.orderIndex}. {t(lesson.title)}
                     </h3>
+                    {lesson.challengeOnly && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400 whitespace-nowrap">
+                        <Dumbbell className="w-3.5 h-3.5" />
+                        {t("Practice")}
+                      </span>
+                    )}
                     {lesson.generationStatus === "STUB" &&
                       lesson.status !== "LOCKED" && (
                         <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
@@ -507,6 +532,49 @@ const CourseDetails: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          {/* Keep-going actions — deliberately at the BOTTOM, centered and
+              prominent, so finishing the list flows straight into "what next". */}
+          {course.status === "READY" && (
+            <div className="mt-12 flex flex-col items-center gap-5 border-t border-gray-200 pt-10 dark:border-gray-800">
+              <div className="text-center">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  {t("Keep going")}
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {t(
+                    "Extend this course with new lessons, or drill what you've learned with a fresh set of practice challenges."
+                  )}
+                </p>
+              </div>
+              <div className="flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleGenerateMore}
+                  disabled={isBusyGenerating}
+                  className="flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Plus className="h-5 w-5" />
+                  {isBusyGenerating && pendingAction === "lessons"
+                    ? t("Generating…")
+                    : t("Generate more lessons")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleGenerateChallenges}
+                  disabled={isBusyGenerating}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Dumbbell className="h-5 w-5" />
+                  {isBusyGenerating && pendingAction === "challenges"
+                    ? t("Generating…")
+                    : t("Generate practice challenges")}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

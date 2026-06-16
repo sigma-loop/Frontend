@@ -14,7 +14,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#0d1117]">
       <PageMeta title={title || "Master the Logic"} />
       <Navbar />
-      <main className="flex-grow pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <main className="flex-grow pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {children}
       </main>
       <Footer />

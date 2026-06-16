@@ -47,6 +47,22 @@ export const courseService = {
     return response.data.data.job;
   },
 
+  // Enqueue a GENERATE_CHALLENGES job — appends a challenge-only "practice"
+  // lesson (one anchor challenge + MCQs, no teaching body). Poll the returned
+  // job via useCurriculumJob just like generateMore.
+  generateChallenges: async (
+    courseId: string,
+    opts?: { focus?: string }
+  ): Promise<CurriculumJob> => {
+    const response = await api.post<JSendResponse<{ job: CurriculumJob }>>(
+      `/courses/${courseId}/generate-challenges`,
+      opts ?? {}
+    );
+    if (!response.data.data)
+      throw new Error("Failed to request practice challenges");
+    return response.data.data.job;
+  },
+
   // Delete an owned course and everything under it (lessons, challenges, etc.).
   deleteCourse: async (courseId: string): Promise<void> => {
     await api.delete(`/courses/${courseId}`);

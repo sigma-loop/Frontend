@@ -5,10 +5,9 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useLocale } from "../../contexts/LocaleContext";
 import { useClickOutside } from "../../hooks/useClickOutside";
 import { ROUTES } from "../../constants/routes";
+import { cn } from "../../utils/cn";
 import Button from "../ui/Button";
 import {
-  Moon,
-  Sun,
   Menu,
   X,
   ChevronDown,
@@ -21,9 +20,17 @@ import darkLogo from "../../assets/dark-logo.png";
 import lightLogo from "../../assets/light-logo.png";
 import LanguageSwitcher from "./LanguageSwitcher";
 
+/** Hairline vertical separator that segments the toolbar (desktop only). */
+const Divider: React.FC<{ className?: string }> = ({ className }) => (
+  <span
+    aria-hidden="true"
+    className={cn("h-5 w-px bg-gray-200 dark:bg-gray-800", className)}
+  />
+);
+
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
   const { t } = useLocale();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -43,29 +50,48 @@ const Navbar: React.FC = () => {
   const initial = (user?.profileData?.name || user?.email || "?")
     .charAt(0)
     .toUpperCase();
+  const roleLabel = user?.role === "ADMIN" ? t("Admin") : t("Student");
 
-  // Modern pill-style nav link.
-  const pillClasses = (isActive: boolean) =>
-    `rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+  // Primary nav links — what's available depends on auth + role.
+  const navLinks = [
+    isAuthenticated && { to: ROUTES.DASHBOARD, label: t("Dashboard") },
+    isAuthenticated && { to: ROUTES.MY_COURSES, label: t("My Courses") },
+    isAuthenticated &&
+      user?.role === "ADMIN" && { to: ROUTES.ADMIN, label: t("Admin") },
+  ].filter(Boolean) as { to: string; label: string }[];
+
+  // Nav link — flat, hairline radius (rounded-lg, not a pill). Active state
+  // uses the one restrained indigo accent.
+  const navLinkClasses = (isActive: boolean) =>
+    cn(
+      "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
       isActive
-        ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+        ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300"
         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
-    }`;
+    );
 
-  const mobilePillClasses = (isActive: boolean) =>
-    `block px-3 py-2.5 rounded-lg text-base font-medium transition-colors ${
+  const mobileLinkClasses = (isActive: boolean) =>
+    cn(
+      "block rounded-lg px-3 py-2.5 text-base font-medium transition-colors",
       isActive
-        ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-    }`;
+        ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300"
+        : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+    );
 
   const menuItemClasses =
-    "flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors";
+    "flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 transition-colors";
 
-  // The mentor is the hero — a clean amber accent pill (flat, no gradient/glow),
-  // matching the Learn-a-New-Thing CTA. Always visible (guests can use it too).
-  const goldPill =
-    "bg-amber-400 text-amber-950 hover:bg-amber-300 transition-colors";
+  const iconButtonClasses =
+    "inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer";
+
+  // The mentor is the hero — a flat amber accent matching the "Learn a New
+  // Thing" CTA (rounded-lg, no gradient/glow). Always visible (guests too).
+  // The background is applied at the call site (our cn() doesn't merge Tailwind
+  // conflicts, so the active shade is chosen, not layered).
+  const mentorCta =
+    "group items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold text-amber-950 transition-colors active:scale-[.99]";
+  const mentorBg = (isActive: boolean) =>
+    isActive ? "bg-amber-300" : "bg-amber-400 hover:bg-amber-300";
 
   const aiBadge = (
     <span className="rounded bg-amber-950/10 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider">
@@ -73,96 +99,95 @@ const Navbar: React.FC = () => {
     </span>
   );
 
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md border-b border-gray-200 dark:bg-[#0d1117]/85 dark:border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <img
-              src={isDark ? darkLogo : lightLogo}
-              alt="SigmaLoop"
-              className="h-8 w-auto"
-            />
-            <span className="text-xl font-bold font-display text-gray-900 dark:text-white">
-              SigmaLoop
-            </span>
-          </Link>
+  const roleBadge = (
+    <span className="shrink-0 rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-white/10 dark:text-gray-300">
+      {roleLabel}
+    </span>
+  );
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1.5">
-            <NavLink
-              to="/mentor"
-              className={`group inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold ${goldPill}`}
-            >
-              <Sparkles className="w-4 h-4 transition-transform group-hover:rotate-12" />
-              {t("Mentor")}
-              {aiBadge}
-            </NavLink>
-            {isAuthenticated && user?.role === "ADMIN" && (
-              <NavLink
-                to="/admin"
-                className={({ isActive }) => pillClasses(isActive)}
-              >
-                {t("Admin Panel")}
-              </NavLink>
-            )}
-            {isAuthenticated && (
-              <NavLink
-                to="/dashboard"
-                className={({ isActive }) => pillClasses(isActive)}
-              >
-                {t("Dashboard")}
-              </NavLink>
+  return (
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/85 backdrop-blur-md dark:border-gray-800 dark:bg-[#0d1117]/85">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4">
+          {/* Left: brand + primary nav */}
+          <div className="flex min-w-0 items-center gap-1">
+            <Link to="/" className="flex shrink-0 items-center gap-2 pe-1">
+              <img
+                src={isDark ? darkLogo : lightLogo}
+                alt="SigmaLoop"
+                className="h-8 w-auto"
+              />
+              <span className="font-display text-lg font-bold text-gray-900 dark:text-white">
+                SigmaLoop
+              </span>
+            </Link>
+
+            {navLinks.length > 0 && (
+              <div className="hidden items-center gap-0.5 md:flex">
+                {navLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.to === ROUTES.DASHBOARD}
+                    className={({ isActive }) => navLinkClasses(isActive)}
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+          {/* Right: hero CTA + utilities + identity */}
+          <div className="flex items-center gap-1.5">
+            <NavLink
+              to="/mentor"
+              className={({ isActive }) =>
+                cn("hidden md:inline-flex", mentorCta, mentorBg(isActive))
+              }
+            >
+              <Sparkles className="h-4 w-4 transition-transform group-hover:rotate-12" />
+              {t("Mentor")}
+              {aiBadge}
+            </NavLink>
+
             {/* Language picker — available to everyone, incl. guests on Home */}
             <LanguageSwitcher />
 
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors cursor-pointer"
-              aria-label={t("Toggle theme")}
-            >
-              {isDark ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
-            </button>
+            <Divider className="mx-0.5 hidden md:block" />
 
             {/* Desktop auth area */}
-            <div className="hidden md:flex items-center space-x-3 rtl:space-x-reverse">
+            <div className="hidden items-center gap-2 md:flex">
               {isAuthenticated ? (
                 <div className="relative" ref={profileRef}>
                   <button
                     onClick={() => setProfileOpen((o) => !o)}
-                    className="flex items-center gap-2 rounded-full py-1 ps-1 pe-2 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    className="group flex cursor-pointer items-center gap-2 rounded-lg p-1 pe-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10"
                     aria-label={t("Account menu")}
                   >
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">
                       {initial}
                     </span>
-                    <span className="max-w-[120px] truncate text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="hidden max-w-[120px] truncate text-sm font-medium text-gray-700 dark:text-gray-300 lg:block">
                       {displayName}
                     </span>
                     <ChevronDown
-                      className={`h-4 w-4 text-gray-400 transition-transform ${
-                        profileOpen ? "rotate-180" : ""
-                      }`}
+                      className={cn(
+                        "h-4 w-4 text-gray-400 transition-transform",
+                        profileOpen && "rotate-180"
+                      )}
                     />
                   </button>
 
                   {profileOpen && (
-                    <div className="absolute end-0 mt-2 w-60 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-[#161b22]">
+                    <div className="absolute end-0 mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-[#161b22]">
                       <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-                        <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                          {displayName}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                            {displayName}
+                          </p>
+                          {roleBadge}
+                        </div>
                         <p className="truncate text-xs text-gray-500 dark:text-gray-400">
                           {user?.email}
                         </p>
@@ -188,7 +213,10 @@ const Navbar: React.FC = () => {
                       <div className="border-t border-gray-100 py-1 dark:border-gray-800">
                         <button
                           onClick={handleLogout}
-                          className={`${menuItemClasses} w-full text-start text-red-600 dark:text-red-400`}
+                          className={cn(
+                            menuItemClasses,
+                            "w-full text-start text-red-600 dark:text-red-400"
+                          )}
                         >
                           <LogOut className="h-4 w-4" />
                           {t("Sign out")}
@@ -198,7 +226,7 @@ const Navbar: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                <div className="flex items-center gap-2">
                   <Link to="/login">
                     <Button variant="ghost" size="sm">
                       {t("Log in")}
@@ -216,13 +244,13 @@ const Navbar: React.FC = () => {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
+              className={cn(iconButtonClasses, "md:hidden")}
               aria-label={t("Toggle menu")}
             >
               {mobileOpen ? (
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               ) : (
-                <Menu className="w-5 h-5" />
+                <Menu className="h-5 w-5" />
               )}
             </button>
           </div>
@@ -231,61 +259,62 @@ const Navbar: React.FC = () => {
 
       {/* Mobile menu dropdown */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#0d1117] shadow-lg">
-          <div className="px-4 py-3 space-y-1">
+        <div className="border-t border-gray-100 bg-white shadow-lg dark:border-gray-800 dark:bg-[#0d1117] md:hidden">
+          <div className="space-y-1 px-4 py-3">
             <NavLink
               to="/mentor"
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-bold ${goldPill}`}
+              className={({ isActive }) =>
+                cn("flex", mentorCta, mentorBg(isActive))
+              }
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="h-4 w-4" />
               {t("Mentor")}
               {aiBadge}
             </NavLink>
-            {isAuthenticated && user?.role === "ADMIN" && (
+
+            {navLinks.map((link) => (
               <NavLink
-                to="/admin"
-                className={({ isActive }) => mobilePillClasses(isActive)}
+                key={link.to}
+                to={link.to}
+                end={link.to === ROUTES.DASHBOARD}
+                className={({ isActive }) => mobileLinkClasses(isActive)}
                 onClick={() => setMobileOpen(false)}
               >
-                {t("Admin Panel")}
+                {link.label}
               </NavLink>
-            )}
-            {isAuthenticated && (
-              <NavLink
-                to="/dashboard"
-                className={({ isActive }) => mobilePillClasses(isActive)}
-                onClick={() => setMobileOpen(false)}
-              >
-                {t("Dashboard")}
-              </NavLink>
-            )}
+            ))}
+
             {isAuthenticated && (
               <NavLink
                 to={ROUTES.SETTINGS}
-                className={({ isActive }) => mobilePillClasses(isActive)}
+                className={({ isActive }) => mobileLinkClasses(isActive)}
                 onClick={() => setMobileOpen(false)}
               >
                 {t("Settings")}
               </NavLink>
             )}
+
             {/* Language picker (guests included) */}
             <div className="pt-1">
               <LanguageSwitcher full />
             </div>
           </div>
 
-          <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3">
+          <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-800">
             {isAuthenticated ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3 px-1">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">
                     {initial}
                   </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                      {displayName}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                        {displayName}
+                      </p>
+                      {roleBadge}
+                    </div>
                     <p className="truncate text-xs text-gray-500 dark:text-gray-400">
                       {user?.email}
                     </p>
@@ -293,8 +322,9 @@ const Navbar: React.FC = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-start px-3 py-2.5 rounded-lg text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-start text-base font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
                 >
+                  <LogOut className="h-4 w-4" />
                   {t("Sign Out")}
                 </button>
               </div>

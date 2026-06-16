@@ -107,7 +107,7 @@ const AdminDashboard: React.FC = () => {
           {statCards.map((stat) => (
             <Link key={stat.label} to={stat.link}>
               <Card className="hover:border-gray-300 dark:hover:border-gray-700 transition-colors cursor-pointer">
-                <div className="flex items-center space-x-4 rtl:space-x-reverse">
+                <div className="flex items-center gap-x-4">
                   <div
                     className={`inline-flex items-center justify-center h-11 w-11 rounded-lg ${stat.bg} ${stat.color}`}
                   >

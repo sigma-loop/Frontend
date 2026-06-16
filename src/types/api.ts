@@ -60,7 +60,7 @@ export type GenerationStatus = "PENDING" | "GENERATING" | "READY" | "FAILED";
 
 export interface CurriculumJob {
   id: string;
-  type?: "NEW_COURSE" | "EXTEND_COURSE";
+  type?: "NEW_COURSE" | "EXTEND_COURSE" | "GENERATE_CHALLENGES";
   prompt: string;
   difficulty: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | null;
   targetCourseId?: string | null;
@@ -129,6 +129,8 @@ export interface Lesson {
   courseId?: string;
   // Lazy "generate on open": STUB lessons are materialized on first open.
   status?: LessonGenerationStatus;
+  // Challenge-only "practice" lesson: no teaching body, just challenges.
+  challengeOnly?: boolean;
   summary?: string;
   challenges?: Challenge[];
   nextLessonId?: string | null;
@@ -394,6 +396,8 @@ export interface SyllabusResponse {
     status: "LOCKED" | "UNLOCKED" | "IN_PROGRESS" | "COMPLETED";
     // STUB = not generated yet (will materialize when opened).
     generationStatus?: LessonGenerationStatus;
+    // Challenge-only "practice" lesson (no teaching body, just challenges).
+    challengeOnly?: boolean;
   }[];
 }
 
