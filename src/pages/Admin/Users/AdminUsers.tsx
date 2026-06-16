@@ -107,7 +107,7 @@ const AdminUsers: React.FC = () => {
               placeholder="Search by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-md"
+              className="w-full sm:max-w-md"
             />
           </div>
         </Card>
@@ -122,8 +122,8 @@ const AdminUsers: React.FC = () => {
           <div className="grid gap-4">
             {filteredUsers.map((user) => (
               <Card key={user._id || user.id}>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
+                <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                         {user.profileData?.name || "Unknown User"}
@@ -138,14 +138,14 @@ const AdminUsers: React.FC = () => {
                       {user.email}
                     </p>
                     {user.stats && (
-                      <div className="mt-2 flex gap-4 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                         <span>XP: {user.stats.totalXp}</span>
                         <span>Streak: {user.stats.streakDays} days</span>
                         <span>Lessons: {user.stats.lessonsCompleted}</span>
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -171,7 +171,7 @@ const AdminUsers: React.FC = () => {
         {/* Edit User Modal */}
         {editingUser && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-[#161b22] rounded-lg max-w-md w-full p-6">
+            <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 shadow-sm rounded-xl max-w-md w-full p-6">
               <h2 className="text-xl font-bold mb-4 dark:text-gray-100">
                 Edit User
               </h2>
@@ -198,7 +198,7 @@ const AdminUsers: React.FC = () => {
                     Role
                   </label>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-800/50 dark:text-gray-100"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 bg-white dark:bg-[#0d1117] dark:text-gray-100"
                     value={editingUser.role}
                     onChange={(e) =>
                       setEditingUser({

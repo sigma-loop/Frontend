@@ -43,24 +43,24 @@ const AdminDashboard: React.FC = () => {
       label: "Total Users",
       value: userCount,
       icon: Users,
-      color: "text-emerald-600",
-      bg: "bg-emerald-100 dark:bg-emerald-500/20",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-500/10",
       link: "/admin/users",
     },
     {
       label: "Courses Generated",
       value: readyJobs,
       icon: CheckCircle2,
-      color: "text-indigo-600",
-      bg: "bg-indigo-100 dark:bg-indigo-500/20",
+      color: "text-indigo-600 dark:text-indigo-400",
+      bg: "bg-indigo-50 dark:bg-indigo-500/10",
       link: "/admin/jobs",
     },
     {
       label: "Failed Generations",
       value: failedJobs,
       icon: AlertTriangle,
-      color: "text-red-600",
-      bg: "bg-red-100 dark:bg-red-500/20",
+      color: "text-red-600 dark:text-red-400",
+      bg: "bg-red-50 dark:bg-red-500/10",
       link: "/admin/jobs",
     },
   ];
@@ -104,10 +104,12 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {statCards.map((stat) => (
             <Link key={stat.label} to={stat.link}>
-              <Card className="hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-colors cursor-pointer">
+              <Card className="hover:border-gray-300 dark:hover:border-gray-700 transition-colors cursor-pointer">
                 <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-lg ${stat.bg} ${stat.color}`}>
-                    <stat.icon className="w-6 h-6" />
+                  <div
+                    className={`inline-flex items-center justify-center h-11 w-11 rounded-lg ${stat.bg} ${stat.color}`}
+                  >
+                    <stat.icon className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">

@@ -48,7 +48,7 @@ const AdminJobs: React.FC = () => {
   return (
     <AdminLayout title="Curriculum Jobs">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-indigo-500" />
@@ -91,7 +91,7 @@ const AdminJobs: React.FC = () => {
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
-              <thead className="bg-gray-50 dark:bg-[#0d1117]">
+              <thead className="bg-gray-50 dark:bg-white/[0.02]">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
                     User
@@ -105,12 +105,12 @@ const AdminJobs: React.FC = () => {
                   <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
                     Requested
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
+                  <th className="hidden sm:table-cell px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-400">
                     Error
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-[#161b22] divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="bg-white dark:bg-[#161b22] divide-y divide-gray-200 dark:divide-gray-800">
                 {jobs.map((job) => (
                   <tr key={job.id}>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
@@ -127,7 +127,7 @@ const AdminJobs: React.FC = () => {
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {formatRelativeTime(job.createdAt)}
                     </td>
-                    <td className="px-4 py-3 text-red-500 max-w-xs truncate">
+                    <td className="hidden sm:table-cell px-4 py-3 text-red-500 max-w-xs truncate">
                       {job.error || ""}
                     </td>
                   </tr>
