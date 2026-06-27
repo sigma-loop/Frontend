@@ -1,11 +1,10 @@
 import axios, { AxiosError } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 import type { JSendResponse } from "../types/api";
-
-const API_URL = "http://localhost:4000/api/v1";
+import { API_BASE_URL } from "../constants";
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
